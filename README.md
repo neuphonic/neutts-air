@@ -1,8 +1,6 @@
 # NeuTTS Air
 
-||VIDEO||
-
-*Click the image above to watch NeuTTS Air in action on YouTube!*
+HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf)
 
 *Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI*
 
