@@ -2,7 +2,7 @@
 
 HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf)
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ec8efcaf-ef79-4c16-b549-ddebc2256c2f" />
+<a href="https://www.youtube.com/watch?v=YAB3hCtu5wE"><img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ec8efcaf-ef79-4c16-b549-ddebc2256c2f" /></a>
 
 Click the image above to watch NeuTTS Air in action on YouTube!
 
