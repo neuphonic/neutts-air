@@ -2,6 +2,10 @@
 
 HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf)
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ec8efcaf-ef79-4c16-b549-ddebc2256c2f" />
+
+Click the image above to watch NeuTTS Air in action on YouTube!
+
 *Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI*
 
 State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS Air is the world’s first super-realistic, on-device, TTS speech language model with instant voice cloning. Built off a 0.5B LLM backbone, NeuTTS Air brings natural-sounding speech, real-time performance, built-in security and speaker cloning to your local device - unlocking a new category of embedded voice agents, assistants, toys, and compliance-safe apps.
