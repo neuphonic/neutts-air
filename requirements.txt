@@ -16,3 +16,8 @@ transformers==4.56.1
 vector-quantize-pytorch==1.17.8
 resemble-perth==1.0.1
 accelerate==1.10.1
+accelerate==1.10.1
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
