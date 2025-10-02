@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import re
 import perth
+import time
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -33,19 +34,33 @@ class NeuTTSAir:
 
         # Load phonemizer + models
         print("Loading phonemizer...")
+        phonemizer_start = time.perf_counter()
         self.phonemizer = EspeakBackend(
             language="en-us", preserve_punctuation=True, with_stress=True
         )
+        phonemizer_time = time.perf_counter() - phonemizer_start
+
+        self.loading_metrics = {
+            "phonemizer_seconds": phonemizer_time,
+            "backbone_seconds": None,
+            "codec_seconds": None,
+            "watermarker_seconds": None,
+        }
 
         self._load_backbone(backbone_repo, backbone_device)
 
         self._load_codec(codec_repo, codec_device)
 
         # Load watermarker
+        watermarker_start = time.perf_counter()
         self.watermarker = perth.PerthImplicitWatermarker()
+        self.loading_metrics["watermarker_seconds"] = time.perf_counter() - watermarker_start
+
+        self.last_inference_metrics: dict[str, float | None] = {}
 
     def _load_backbone(self, backbone_repo, backbone_device):
         print(f"Loading backbone from: {backbone_repo} on {backbone_device} ...")
+        start = time.perf_counter()
 
         # GGUF loading
         if backbone_repo.endswith("gguf"):
@@ -76,9 +91,12 @@ class NeuTTSAir:
                 torch.device(backbone_device)
             )
 
+        self.loading_metrics["backbone_seconds"] = time.perf_counter() - start
+
     def _load_codec(self, codec_repo, codec_device):
 
         print(f"Loading codec from: {codec_repo} on {codec_device} ...")
+        start = time.perf_counter()
         match codec_repo:
             case "neuphonic/neucodec":
                 self.codec = NeuCodec.from_pretrained(codec_repo)
@@ -109,6 +127,8 @@ class NeuTTSAir:
                     " 'neuphonic/neucodec-onnx-decoder'."
                 )
 
+        self.loading_metrics["codec_seconds"] = time.perf_counter() - start
+
     def infer(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> np.ndarray:
         """
         Perform inference to generate speech from text using the TTS model and reference audio.
@@ -121,16 +141,38 @@ class NeuTTSAir:
             np.ndarray: Generated speech waveform.
         """
 
-        # Generate tokens
+        inference_start = time.perf_counter()
+
         if self._is_quantized_model:
+            backbone_start = time.perf_counter()
             output_str = self._infer_ggml(ref_codes, ref_text, text)
+            backbone_time = time.perf_counter() - backbone_start
         else:
             prompt_ids = self._apply_chat_template(ref_codes, ref_text, text)
+            backbone_start = time.perf_counter()
             output_str = self._infer_torch(prompt_ids)
+            backbone_time = time.perf_counter() - backbone_start
 
-        # Decode
+        decode_start = time.perf_counter()
         wav = self._decode(output_str)
-        watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=24_000)
+        decode_time = time.perf_counter() - decode_start
+
+        watermark_start = time.perf_counter()
+        watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=self.sample_rate)
+        watermark_time = time.perf_counter() - watermark_start
+
+        total_time = time.perf_counter() - inference_start
+        audio_duration = len(watermarked_wav) / self.sample_rate if len(watermarked_wav) else 0.0
+        rtf = total_time / audio_duration if audio_duration else None
+
+        self.last_inference_metrics = {
+            "backbone_seconds": backbone_time,
+            "codec_decode_seconds": decode_time,
+            "watermark_seconds": watermark_time,
+            "total_seconds": total_time,
+            "audio_seconds": audio_duration,
+            "rtf": rtf,
+        }
 
         return watermarked_wav
 
