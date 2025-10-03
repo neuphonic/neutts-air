@@ -58,6 +58,14 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    EspeakWrapper.set_library(_ESPEAK_LIBRARY)
    ```
 
+   Windows users may need to run (see https://github.com/bootphon/phonemizer/issues/163)
+   ```pwsh
+   $env:PHONEMIZER_ESPEAK_LIBRARY = "c:\Program Files\eSpeak NG\libespeak-ng.dll"
+   $env:PHONEMIZER_ESPEAK_PATH = "c:\Program Files\eSpeak NG"
+   setx PHONEMIZER_ESPEAK_LIBRARY "c:\Program Files\eSpeak NG\libespeak-ng.dll"
+   setx PHONEMIZER_ESPEAK_PATH "c:\Program Files\eSpeak NG"
+   ```
+
 3. **Install Python dependencies**
 
    The requirements file includes the dependencies needed to run the model with PyTorch.
