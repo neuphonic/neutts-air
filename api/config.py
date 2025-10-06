@@ -1,90 +1,90 @@
 import os
 from pathlib import Path
 
-# 项目根目录
+# Project root directory
 BASE_DIR = Path(__file__).parent.parent
 
-# 模型配置
+# Model configuration
 MODEL_CONFIG = {
     "tts-1": {
-        "backbone": "neuphonic/neutts-air-q4-gguf",  # 使用量化模型提高速度
-        "codec": "neuphonic/neucodec"  # 使用完整 codec 来编码和解码
+        "backbone": "neuphonic/neutts-air-q4-gguf",  # Use quantized model for better speed
+        "codec": "neuphonic/neucodec"  # Use full codec for encoding and decoding
     },
     "tts-1-hd": {
-        "backbone": "neuphonic/neutts-air",  # 使用完整模型获得更高质量
+        "backbone": "neuphonic/neutts-air",  # Use full model for better quality
         "codec": "neuphonic/neucodec"
     }
 }
 
-# 语音配置 - 映射 OpenAI 语音名称到本地参考音频
+# Voice configuration - Map OpenAI voice names to local reference audio
 VOICE_CONFIG = {
-    # 男声组
+    # Male voices
     "alloy": {
         "ref_audio": str(BASE_DIR / "samples" / "dave.wav"),
         "ref_text": str(BASE_DIR / "samples" / "dave.txt"),
-        "description": "中性男声",
+        "description": "Neutral male voice",
         "gender": "male"
     },
     "echo": {
         "ref_audio": str(BASE_DIR / "samples" / "dave.wav"),
         "ref_text": str(BASE_DIR / "samples" / "dave.txt"),
-        "description": "温暖男声",
+        "description": "Warm male voice",
         "gender": "male"
     },
-    # 女声组
+    # Female voices
     "onyx": {
         "ref_audio": str(BASE_DIR / "samples" / "jo.wav"),
         "ref_text": str(BASE_DIR / "samples" / "jo.txt"),
-        "description": "深沉女声",
+        "description": "Deep female voice",
         "gender": "female"
     },
 
     "fable": {
         "ref_audio": str(BASE_DIR / "samples" / "jo.wav"),
         "ref_text": str(BASE_DIR / "samples" / "jo.txt"),
-        "description": "富有表现力的女声",
+        "description": "Expressive female voice",
         "gender": "female"
     },
     "nova": {
         "ref_audio": str(BASE_DIR / "samples" / "jo.wav"),
         "ref_text": str(BASE_DIR / "samples" / "jo.txt"),
-        "description": "活力女声",
+        "description": "Energetic female voice",
         "gender": "female"
     },
     "shimmer": {
         "ref_audio": str(BASE_DIR / "samples" / "jo.wav"),
         "ref_text": str(BASE_DIR / "samples" / "jo.txt"),
-        "description": "柔和女声",
+        "description": "Gentle female voice",
         "gender": "female"
     }
 }
 
-# 服务器配置
+# Server configuration
 SERVER_CONFIG = {
     "host": os.getenv("API_HOST", "0.0.0.0"),
     "port": int(os.getenv("API_PORT", "8000")),
     "workers": int(os.getenv("API_WORKERS", "1")),
 }
 
-# 设备配置
+# Device configuration
 DEVICE_CONFIG = {
     "backbone_device": os.getenv("BACKBONE_DEVICE", "cpu"),
     "codec_device": os.getenv("CODEC_DEVICE", "cpu"),
 }
 
-# API Key 配置
-# 从环境变量读取 API Keys（逗号分隔多个 key）
+# API Key configuration
+# Read API Keys from environment variable (comma-separated for multiple keys)
 API_KEYS_ENV = os.getenv("API_KEYS", "")
 if API_KEYS_ENV:
     API_KEYS = set(key.strip() for key in API_KEYS_ENV.split(",") if key.strip())
 else:
-    # 如果环境变量未设置，使用默认配置（用于开发环境）
-    # 生产环境请务必设置环境变量！
+    # If environment variable not set, use default config (for development)
+    # IMPORTANT: Set environment variable in production!
     API_KEYS = {
-        "sk-neutts-demo-key-123456",  # 示例 key 1
-        "sk-neutts-demo-key-789012",  # 示例 key 2
+        "sk-neutts-demo-key-123456",  # Demo key 1
+        "sk-neutts-demo-key-789012",  # Demo key 2
     }
 
-# 是否启用 API Key 验证
-# 设置为 False 可以禁用验证（仅用于开发/测试）
+# Enable API Key authentication
+# Set to False to disable authentication (for development/testing only)
 ENABLE_API_KEY_AUTH = os.getenv("ENABLE_API_KEY_AUTH", "true").lower() in ("true", "1", "yes")

@@ -13,59 +13,59 @@ from .auth import verify_api_key
 
 
 app = FastAPI(
-    title="NeuTTS Air - OpenAI 兼容 API",
-    description="兼容 OpenAI 语音 API 的 NeuTTS Air 服务",
+    title="NeuTTS Air - OpenAI Compatible API",
+    description="OpenAI-compatible Text-to-Speech API powered by NeuTTS Air",
     version="1.0.0"
 )
 
-# 全局 TTS 实例缓存
+# Global TTS instance cache
 tts_instances = {}
 
-# 全局参考音频编码缓存
+# Global reference audio encoding cache
 reference_codes_cache = {}
 
-# 是否启用启动时预加载
+# Enable preload on startup
 PRELOAD_ON_STARTUP = os.getenv("PRELOAD_ON_STARTUP", "true").lower() in ("true", "1", "yes")
 
 
 def get_tts_instance(model: str) -> NeuTTSAir:
     """
-    获取或创建 TTS 实例（带缓存）
+    Get or create TTS instance (with cache)
     
     Args:
-        model: 模型名称
+        model: Model name
     
     Returns:
-        NeuTTSAir 实例
+        NeuTTSAir instance
     """
     if model not in tts_instances:
         config = MODEL_CONFIG.get(model)
         if not config:
-            raise ValueError(f"不支持的模型: {model}")
+            raise ValueError(f"Unsupported model: {model}")
         
-        print(f"正在加载模型: {model}")
+        print(f"Loading model: {model}")
         tts_instances[model] = NeuTTSAir(
             backbone_repo=config["backbone"],
             backbone_device=DEVICE_CONFIG["backbone_device"],
             codec_repo=config["codec"],
             codec_device=DEVICE_CONFIG["codec_device"]
         )
-        print(f"模型加载完成: {model}")
+        print(f"Model loaded: {model}")
     
     return tts_instances[model]
 
 
 def preload_reference_audios():
     """
-    预加载所有参考音频编码
+    Preload all reference audio encodings
     
-    在服务器启动时调用，避免首次请求时的编码延迟
+    Called at server startup to avoid encoding delay on first request
     """
     print("\n" + "=" * 60)
-    print("预加载参考音频编码...")
+    print("Preloading reference audio encodings...")
     print("=" * 60)
     
-    # 获取所有唯一的参考音频文件
+    # Get all unique reference audio files
     unique_audio_files = {}
     for voice_id, config in VOICE_CONFIG.items():
         ref_audio = config["ref_audio"]
@@ -73,61 +73,61 @@ def preload_reference_audios():
             unique_audio_files[ref_audio] = []
         unique_audio_files[ref_audio].append(voice_id)
     
-    print(f"发现 {len(unique_audio_files)} 个唯一的参考音频文件")
+    print(f"Found {len(unique_audio_files)} unique reference audio files")
     print()
     
-    # 使用默认模型进行编码
+    # Use default model for encoding
     default_model = "tts-1"
     
     try:
-        # 获取 TTS 实例
+        # Get TTS instance
         tts = get_tts_instance(default_model)
         
-        # 编码每个唯一的参考音频
+        # Encode each unique reference audio
         for ref_audio, voice_ids in unique_audio_files.items():
-            print(f"编码: {Path(ref_audio).name}")
-            print(f"  用于语音: {', '.join(voice_ids)}")
+            print(f"Encoding: {Path(ref_audio).name}")
+            print(f"  For voices: {', '.join(voice_ids)}")
             
             try:
-                # 编码参考音频
+                # Encode reference audio
                 ref_codes = tts.encode_reference(ref_audio)
                 
-                # 为所有使用此音频的语音填充缓存
+                # Fill cache for all voices using this audio
                 for voice_id in voice_ids:
                     cache_key = f"{default_model}_{voice_id}"
                     reference_codes_cache[cache_key] = ref_codes
-                    print(f"  ✓ 已缓存: {cache_key}")
+                    print(f"  ✓ Cached: {cache_key}")
                 
                 print()
                 
             except Exception as e:
-                print(f"  ✗ 编码失败: {e}")
+                print(f"  ✗ Encoding failed: {e}")
                 print()
         
         print("=" * 60)
-        print(f"✓ 预加载完成！已缓存 {len(reference_codes_cache)} 个语音编码")
+        print(f"✓ Preload complete! Cached {len(reference_codes_cache)} voice encodings")
         print("=" * 60)
         print()
         
     except Exception as e:
-        print(f"✗ 预加载失败: {e}")
-        print("将在首次请求时进行编码")
+        print(f"✗ Preload failed: {e}")
+        print("Will encode on first request")
         print()
 
 
 @app.on_event("startup")
 async def startup_event():
-    """服务器启动事件"""
+    """Server startup event"""
     if PRELOAD_ON_STARTUP:
         preload_reference_audios()
     else:
-        print("\n预加载已禁用（PRELOAD_ON_STARTUP=false）")
-        print("参考音频将在首次请求时编码\n")
+        print("\nPreload disabled (PRELOAD_ON_STARTUP=false)")
+        print("Reference audio will be encoded on first request\n")
 
 
 @app.get("/")
 async def root():
-    """根路径"""
+    """Root path"""
     return {
         "message": "NeuTTS Air - OpenAI 兼容 API",
         "version": "1.0.0",
@@ -142,7 +142,7 @@ async def root():
 
 @app.get("/v1/models")
 async def list_models(api_key: str = Depends(verify_api_key)):
-    """列出可用的模型（兼容 OpenAI API）"""
+    """List available models (OpenAI API compatible)"""
     return {
         "object": "list",
         "data": [
@@ -164,7 +164,7 @@ async def list_models(api_key: str = Depends(verify_api_key)):
 
 @app.get("/v1/voices")
 async def list_voices(api_key: str = Depends(verify_api_key)):
-    """列出可用的语音"""
+    """List available voices"""
     return {
         "voices": [
             {
@@ -184,7 +184,7 @@ async def create_speech(
     api_key: str = Depends(verify_api_key)
 ):
     """
-    创建语音（兼容 OpenAI API）
+    Create speech (OpenAI API compatible)
     
     POST /v1/audio/speech
     {
@@ -196,77 +196,77 @@ async def create_speech(
     }
     """
     try:
-        # 验证输入文本长度
+        # Validate input text length
         input_length = len(request.input)
         if input_length > 10000:
             raise HTTPException(
                 status_code=400,
                 detail={
                     "error": {
-                        "message": f"输入文本过长（{input_length} 字符）。建议输入长度不超过 10000 字符以获得最佳效果。对于长文本，请考虑分段处理。",
+                        "message": f"Input text too long ({input_length} characters). Recommended length is up to 10000 characters for best results. For longer texts, please consider splitting into segments.",
                         "type": "invalid_request_error",
                         "code": "text_too_long"
                     }
                 }
             )
         
-        # 验证语音
+        # Validate voice
         if request.voice not in VOICE_CONFIG:
             raise HTTPException(
                 status_code=400,
-                detail=f"不支持的语音: {request.voice}. 支持的语音: {', '.join(VOICE_CONFIG.keys())}"
+                detail=f"Unsupported voice: {request.voice}. Supported voices: {', '.join(VOICE_CONFIG.keys())}"
             )
         
-        # 获取语音配置
+        # Get voice configuration
         voice_config = VOICE_CONFIG[request.voice]
         ref_audio_path = voice_config["ref_audio"]
         ref_text_path = voice_config["ref_text"]
         
-        # 检查参考文件是否存在
+        # Check if reference file exists
         if not os.path.exists(ref_audio_path):
             raise HTTPException(
                 status_code=500,
-                detail=f"参考音频文件不存在: {ref_audio_path}"
+                detail=f"Reference audio file not found: {ref_audio_path}"
             )
         
-        # 读取参考文本
+        # Read reference text
         if os.path.exists(ref_text_path):
             with open(ref_text_path, "r", encoding="utf-8") as f:
                 ref_text = f.read().strip()
         else:
-            # 如果没有参考文本文件，使用默认文本
+            # Use default text if reference text file not found
             ref_text = "This is a reference audio sample."
         
-        # 获取 TTS 实例
+        # Get TTS instance
         tts = get_tts_instance(request.model)
         
-        # 使用缓存的参考音频编码（避免每次请求都重新编码）
+        # Use cached reference audio encoding (avoid re-encoding on every request)
         cache_key = f"{request.model}_{request.voice}"
         if cache_key not in reference_codes_cache:
-            print(f"编码参考音频（首次）: {ref_audio_path}")
+            print(f"Encoding reference audio (first time): {ref_audio_path}")
             ref_codes = tts.encode_reference(ref_audio_path)
             reference_codes_cache[cache_key] = ref_codes
-            print(f"✓ 参考音频已缓存: {cache_key}")
+            print(f"✓ Reference audio cached: {cache_key}")
         else:
             ref_codes = reference_codes_cache[cache_key]
-            print(f"✓ 使用缓存的参考音频: {cache_key}")
+            print(f"✓ Using cached reference audio: {cache_key}")
         
-        # 生成语音
-        print(f"生成语音: {request.input[:50]}...")
+        # Generate speech
+        print(f"Generating speech: {request.input[:50]}...")
         wav = tts.infer(request.input, ref_codes, ref_text)
         
-        # 调整速度
+        # Adjust speed
         if request.speed != 1.0:
-            print(f"调整速度: {request.speed}x")
+            print(f"Adjusting speed: {request.speed}x")
             wav, sample_rate = adjust_speed(wav, 24000, request.speed)
         else:
             sample_rate = 24000
         
-        # 转换音频格式
-        print(f"转换格式: {request.response_format}")
+        # Convert audio format
+        print(f"Converting format: {request.response_format}")
         audio_bytes = convert_audio_format(wav, sample_rate, request.response_format)
         
-        # 返回音频
+        # Return audio
         media_type = get_media_type(request.response_format)
         return Response(
             content=audio_bytes,
@@ -279,13 +279,13 @@ async def create_speech(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"错误: {str(e)}")
+        print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/health")
 async def health_check():
-    """健康检查"""
+    """Health check"""
     return {"status": "healthy"}
 
 

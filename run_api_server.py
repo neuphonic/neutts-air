@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 """
-启动 OpenAI 兼容的 NeuTTS Air API 服务器
+Start OpenAI-compatible NeuTTS Air API Server
 
-使用方法:
+Usage:
     python run_api_server.py
     
-环境变量:
-    API_HOST: 服务器主机地址 (默认: 0.0.0.0)
-    API_PORT: 服务器端口 (默认: 8000)
-    BACKBONE_DEVICE: 主干模型设备 (默认: cpu)
-    CODEC_DEVICE: 编解码器设备 (默认: cpu)
-    API_KEYS: API 密钥（逗号分隔多个）
-    ENABLE_API_KEY_AUTH: 是否启用 API Key 验证 (默认: true)
-    PRELOAD_ON_STARTUP: 启动时预加载参考音频 (默认: true)
+Environment Variables:
+    API_HOST: Server host address (default: 0.0.0.0)
+    API_PORT: Server port (default: 8000)
+    BACKBONE_DEVICE: Backbone model device (default: cpu)
+    CODEC_DEVICE: Codec device (default: cpu)
+    API_KEYS: API keys (comma-separated for multiple keys)
+    ENABLE_API_KEY_AUTH: Enable API Key authentication (default: true)
+    PRELOAD_ON_STARTUP: Preload reference audio on startup (default: true)
 """
 
 import os
 from pathlib import Path
 
-# 尝试加载 .env 文件
+# Try to load .env file
 try:
     from dotenv import load_dotenv
     env_path = Path(__file__).parent / ".env"
     if env_path.exists():
         load_dotenv(env_path)
-        print(f"✓ 已加载配置文件: {env_path}")
+        print(f"✓ Config file loaded: {env_path}")
 except ImportError:
-    # 如果没有安装 python-dotenv，只从系统环境变量读取
+    # If python-dotenv not installed, only read from system environment variables
     pass
 
 import uvicorn
@@ -34,14 +34,14 @@ from api.config import SERVER_CONFIG, ENABLE_API_KEY_AUTH
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("NeuTTS Air - OpenAI 兼容 API 服务器")
+    print("NeuTTS Air - OpenAI Compatible API Server")
     print("=" * 60)
-    print(f"服务器地址: http://{SERVER_CONFIG['host']}:{SERVER_CONFIG['port']}")
-    print(f"API 文档: http://{SERVER_CONFIG['host']}:{SERVER_CONFIG['port']}/docs")
-    print(f"API 认证: {'已启用 ✓' if ENABLE_API_KEY_AUTH else '已禁用 (开发模式)'}")
+    print(f"Server: http://{SERVER_CONFIG['host']}:{SERVER_CONFIG['port']}")
+    print(f"API Docs: http://{SERVER_CONFIG['host']}:{SERVER_CONFIG['port']}/docs")
+    print(f"Authentication: {'Enabled ✓' if ENABLE_API_KEY_AUTH else 'Disabled (Dev Mode)'}")
     if ENABLE_API_KEY_AUTH:
         from api.config import API_KEYS
-        print(f"已配置 {len(API_KEYS)} 个 API Key")
+        print(f"Configured {len(API_KEYS)} API Key(s)")
     print("=" * 60)
     
     uvicorn.run(
