@@ -12,7 +12,7 @@ python -m examples.basic_example \
   --backbone neuphonic/neutts-air-q4-gguf
 ```
 
-### Pre-encode reference
+### Pre-encode a reference
 
 Reference encoding can be done ahead of time to reduce latency when inferencing the model; to pre-encode a reference you only need to provide a reference audio as in the following script:
 
@@ -22,7 +22,7 @@ python -m examples.encode_reference \
  --output_path encoded_reference.pt
  ```
 
-### Onnx Decoder Example
+### Minimal Latency Example
 
 To take advantage of encoding references ahead of time, we have a compiled the codec decoder into an [onnx graph](https://huggingface.co/neuphonic/neucodec-onnx-decoder) that can enable inferencing NeuTTS-Air without loading the encoder. 
 This can be useful for running the model in resource-constrained environments where the Encoder may add a large amount of extra latency/memory usage.
@@ -33,5 +33,6 @@ To test the decoder, make sure you have installed ```onnxruntime``` and run the 
 python -m examples.onnx_example \
   --input_text "My name is Dave, and um, I'm from London" \
   --ref_codes samples/dave.pt \
-  --ref_text samples/dave.txt
+  --ref_text samples/dave.txt \
+  --backbone neuphonic/neutts-air-q4-gguf
 ```
