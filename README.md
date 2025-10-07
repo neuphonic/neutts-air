@@ -2,7 +2,7 @@
 
 HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf) [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
 
-[Demo Video](https://github.com/user-attachments/assets/cf50fe71-0d52-4cc7-a35e-bc884634b7b7)
+[Demo Video](https://github.com/user-attachments/assets/020547bc-9e3e-440f-b016-ae61ca645184)
 
 *Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI*
 
@@ -18,8 +18,9 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS A
 ## Model Details
 
 NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
-
-- **Audio Codec**: [NeuCodec](https://huggingface.co/neuphonic/neucodec) - our proprietary neural audio codec that achieves exceptional audio quality at low bitrates using a single codebook
+- **Supported Languages**: English
+- **Audio Codec**: [NeuCodec](https://huggingface.co/neuphonic/neucodec) - our 50hz neural audio codec that achieves exceptional audio quality at low bitrates using a single codebook
+- **Context Window**: 2048 tokens, enough for processing ~30 seconds of audio (including prompt duration)
 - **Format**: Available in GGML format for efficient on-device inference
 - **Responsibility**: Watermarked outputs
 - **Inference Speed**: Real-time generation on mid-range devices
@@ -108,7 +109,12 @@ Several examples are available, including a Jupyter notebook in the `examples` f
 from neuttsair.neutts import NeuTTSAir
 import soundfile as sf
 
-tts = NeuTTSAir( backbone_repo="neuphonic/neutts-air-q4-gguf", backbone_device="cpu", codec_repo="neuphonic/neucodec", codec_device="cpu")
+tts = NeuTTSAir(
+   backbone_repo="neuphonic/neutts-air", # or 'neutts-air-q4-gguf' wit llama-cpp-python installed
+   backbone_device="cpu",
+   codec_repo="neuphonic/neucodec",
+   codec_device="cpu"
+)
 input_text = "My name is Dave, and um, I'm from London."
 
 ref_text = "samples/dave.txt"
@@ -180,6 +186,12 @@ For optimal performance, reference audio samples should be:
 4. **Saved as a `.wav` file**
 5. **Clean** — minimal to no background noise
 6. **Natural, continuous speech** — like a monologue or conversation, with few pauses, so the model can capture tone effectively
+
+## Getting the best latency results on CPU
+
+- Use the Q4 GGUF model!
+- Pre-encode a reference.
+- Use the onnx decoder.
 
 ## Responsibility
 
