@@ -6,3 +6,9 @@ soundfile==0.13.1
 torch==2.8.0
 transformers==4.56.1
 resemble-perth==1.0.1
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+python-multipart==0.0.20
+pydub==0.25.1
+python-dotenv==1.0.0
