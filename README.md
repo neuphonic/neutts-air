@@ -2,9 +2,7 @@
 
 HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf) [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
 
-<a href="https://www.youtube.com/watch?v=YAB3hCtu5wE"><img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ec8efcaf-ef79-4c16-b549-ddebc2256c2f" /></a>
-
-Click the image above to watch NeuTTS Air in action on YouTube!
+[Demo Video](https://github.com/user-attachments/assets/cf50fe71-0d52-4cc7-a35e-bc884634b7b7)
 
 *Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI*
 
