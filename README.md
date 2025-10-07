@@ -158,8 +158,8 @@ For optimal performance, reference audio samples should be:
 
 For optimal performance on-device:
 
-1. Use the GGUF model backbones.
-2. Pre-encode references.
+1. Use the GGUF model backbones
+2. Pre-encode references
 3. Use the [onnx codec decoder](https://huggingface.co/neuphonic/neucodec-onnx-decoder)
 
 Take a look at this example [examples README](examples/README.md###minimal-latency-example) to get started.
