@@ -1,0 +1,54 @@
+"""
+Centralized literals and default configuration values for NeuTTSAir.
+"""
+
+DEFAULT_SAMPLE_RATE = 24_000
+DEFAULT_MAX_CONTEXT = 2048
+REFERENCE_ENCODE_SAMPLE_RATE = 16_000
+REFERENCE_MONO = True
+
+CPU_DEVICE = "cpu"
+GPU_DEVICE = "gpu"
+
+DEFAULT_BACKBONE_REPO = "neuphonic/neutts-air"
+DEFAULT_CODEC_REPO = "neuphonic/neucodec"
+DISTILL_CODEC_REPO = "neuphonic/distill-neucodec"
+ONNX_CODEC_REPO = "neuphonic/neucodec-onnx-decoder"
+
+GGUF_SUFFIX = "gguf"
+GGUF_FILENAME_PATTERN = "*.gguf"
+GGUF_GPU_ALL_LAYERS = -1
+GGUF_GPU_NO_LAYERS = 0
+
+PHONEMIZER_LANGUAGE = "en-us"
+PHONEMIZER_PRESERVE_PUNCTUATION = True
+PHONEMIZER_WITH_STRESS = True
+PHONEME_SEPARATOR = " "
+
+TOKEN_SPEECH_REPLACE = "<|SPEECH_REPLACE|>"
+TOKEN_SPEECH_GENERATION_START = "<|SPEECH_GENERATION_START|>"
+TOKEN_SPEECH_GENERATION_END = "<|SPEECH_GENERATION_END|>"
+TOKEN_TEXT_REPLACE = "<|TEXT_REPLACE|>"
+TOKEN_TEXT_PROMPT_START = "<|TEXT_PROMPT_START|>"
+TOKEN_TEXT_PROMPT_END = "<|TEXT_PROMPT_END|>"
+
+SPEECH_TOKEN_FORMAT = "<|speech_{idx}|>"
+SPEECH_TOKEN_REGEX = r"<\|speech_(\d+)\|>"
+
+CHAT_TEMPLATE = "user: Convert the text to speech:{text_token}\nassistant:{speech_token}"
+
+GGML_PROMPT_TEMPLATE = (
+    "user: Convert the text to speech:{text_start}{prompt_body}{text_end}\n"
+    "assistant:{speech_start}{codes}"
+)
+
+GGML_STOP_TOKENS = (TOKEN_SPEECH_GENERATION_END,)
+
+DEFAULT_TEMPERATURE = 1.0
+DEFAULT_TOP_K = 50
+DEFAULT_MIN_NEW_TOKENS = 50
+TORCH_GENERATE_DO_SAMPLE = True
+TORCH_GENERATE_USE_CACHE = True
+
+LLM_OUTPUT_CHOICES_KEY = "choices"
+LLM_OUTPUT_TEXT_KEY = "text"
