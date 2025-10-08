@@ -127,6 +127,22 @@ wav = tts.infer(input_text, ref_codes, ref_text)
 sf.write("test.wav", wav, 24000)
 ```
 
+### Wyoming Protocol Server
+
+A Wyoming-compatible TTS server is provided for use in voice assistant pipelines (Home Assistant, Rhasspy, OVOS, etc.).
+
+```bash
+python -m examples.wyoming_server \
+  --uri tcp://0.0.0.0:10200 \
+  --voice name=dave,ref_audio=samples/dave.wav,ref_text=samples/dave.txt
+```
+
+- `name` identifies the voice exposed over Wyoming.
+- `ref_text` may be a text file or inline string matching the reference audio transcript.
+- Provide `ref_codes=/path/to/codes.pt` instead of `ref_audio=…` when you have pre-encoded references (see [`examples/encode_reference.py`](examples/encode_reference.py)).
+
+Multiple voices can be registered by repeating `--voice`. Clients will receive the advertised voice list and can select a voice by name or language.
+
 ## Preparing References for Cloning
 
 NeuTTS Air requires two inputs:
