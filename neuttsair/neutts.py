@@ -1,14 +1,21 @@
-from typing import Generator
+from __future__ import annotations
+
+from collections.abc import Generator, Iterable
 from pathlib import Path
+from types import ModuleType
+import re
+
 import librosa
 import numpy as np
-import torch
-import re
 import perth
-from neucodec import NeuCodec, DistillNeuCodec
+from neucodec import DistillNeuCodec, NeuCodec
 from phonemizer.backend import EspeakBackend
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
-from threading import Thread
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+try:  # pragma: no cover - optional dependency
+    import torch  # type: ignore[assignment]
+except ImportError:  # pragma: no cover - optional dependency
+    torch = None  # type: ignore[assignment]
 
 
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
@@ -31,11 +38,42 @@ def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
         t = np.linspace(0, 1, frame_length + 2, dtype=dtype)[1:-1]
         weight = np.abs(0.5 - (t - 0.5))
 
-        out[..., offset : offset + frame_length] += weight * frame
-        sum_weight[offset : offset + frame_length] += weight
+        frame_slice = slice(offset, offset + frame_length)
+        out[..., frame_slice] += weight * frame
+        sum_weight[frame_slice] += weight
         offset += stride
     assert sum_weight.min() > 0
     return out / sum_weight
+
+
+CodesInput = Iterable[int] | np.ndarray
+
+
+def _require_torch(feature: str) -> ModuleType:
+    if torch is None:
+        raise ImportError(
+            f"{feature} requires the optional dependency `torch`. "
+            "Install it separately with `pip install torch`."
+        )
+    return torch
+
+
+def _flatten_codes(codes: CodesInput) -> list[int]:
+    if torch is not None and isinstance(codes, torch.Tensor):
+        flattened = codes.detach().cpu().view(-1).tolist()
+        return [int(code) for code in flattened]
+
+    if isinstance(codes, np.ndarray):
+        flattened = codes.reshape(-1).tolist()
+        return [int(code) for code in flattened]
+
+    if isinstance(codes, Iterable):
+        return [int(code) for code in codes]
+
+    message = (
+        "Reference codes must be an iterable of integers, " "a numpy array, or a torch Tensor."
+    )
+    raise TypeError(message)
 
 
 class NeuTTSAir:
@@ -105,9 +143,10 @@ class NeuTTSAir:
             self._is_quantized_model = True
 
         else:
+            torch_mod = _require_torch("Loading transformer backbones")
             self.tokenizer = AutoTokenizer.from_pretrained(backbone_repo)
             self.backbone = AutoModelForCausalLM.from_pretrained(backbone_repo).to(
-                torch.device(backbone_device)
+                torch_mod.device(backbone_device)
             )
 
     def _load_codec(self, codec_repo, codec_device):
@@ -115,9 +154,11 @@ class NeuTTSAir:
         print(f"Loading codec from: {codec_repo} on {codec_device} ...")
         match codec_repo:
             case "neuphonic/neucodec":
+                _require_torch("Using the `neucodec` PyTorch codec")
                 self.codec = NeuCodec.from_pretrained(codec_repo)
                 self.codec.eval().to(codec_device)
             case "neuphonic/distill-neucodec":
+                _require_torch("Using the distill `neucodec` PyTorch codec")
                 self.codec = DistillNeuCodec.from_pretrained(codec_repo)
                 self.codec.eval().to(codec_device)
             case "neuphonic/neucodec-onnx-decoder":
@@ -143,23 +184,25 @@ class NeuTTSAir:
                     " 'neuphonic/neucodec-onnx-decoder'."
                 )
 
-    def infer(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> np.ndarray:
+    def infer(self, text: str, ref_codes: CodesInput, ref_text: str) -> np.ndarray:
         """
         Perform inference to generate speech from text using the TTS model and reference audio.
 
         Args:
             text (str): Input text to be converted to speech.
-            ref_codes (np.ndarray | torch.tensor): Encoded reference.
+            ref_codes (Iterable[int] | np.ndarray): Encoded reference codes.
             ref_text (str): Reference text for reference audio. Defaults to None.
         Returns:
             np.ndarray: Generated speech waveform.
         """
 
+        codes = _flatten_codes(ref_codes)
+
         # Generate tokens
         if self._is_quantized_model:
-            output_str = self._infer_ggml(ref_codes, ref_text, text)
+            output_str = self._infer_ggml(codes, ref_text, text)
         else:
-            prompt_ids = self._apply_chat_template(ref_codes, ref_text, text)
+            prompt_ids = self._apply_chat_template(codes, ref_text, text)
             output_str = self._infer_torch(prompt_ids)
 
         # Decode
@@ -167,29 +210,40 @@ class NeuTTSAir:
         watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=24_000)
 
         return watermarked_wav
-    
-    def infer_stream(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> Generator[np.ndarray, None, None]:
+
+    def infer_stream(
+        self, text: str, ref_codes: CodesInput, ref_text: str
+    ) -> Generator[np.ndarray, None, None]:
         """
-        Perform streaming inference to generate speech from text using the TTS model and reference audio.
+        Perform streaming inference to generate speech from text using the TTS model
+        and a reference audio prompt.
 
         Args:
             text (str): Input text to be converted to speech.
-            ref_codes (np.ndarray | torch.tensor): Encoded reference.
+            ref_codes (Iterable[int] | np.ndarray): Encoded reference codes.
             ref_text (str): Reference text for reference audio. Defaults to None.
         Yields:
             np.ndarray: Generated speech waveform.
-        """ 
+        """
 
         if self._is_quantized_model:
-            return self._infer_stream_ggml(ref_codes, ref_text, text)
+            codes = _flatten_codes(ref_codes)
+            return self._infer_stream_ggml(codes, ref_text, text)
 
         else:
             raise NotImplementedError("Streaming is not implemented for the torch backend!")
 
     def encode_reference(self, ref_audio_path: str | Path):
+        if self._is_onnx_codec:
+            raise RuntimeError(
+                "Encoding reference audio requires a PyTorch codec. "
+                "Use 'neuphonic/neucodec' or 'neuphonic/distill-neucodec'."
+            )
+
+        torch_mod = _require_torch("Encoding reference audio")
         wav, _ = librosa.load(ref_audio_path, sr=16000, mono=True)
-        wav_tensor = torch.from_numpy(wav).float().unsqueeze(0).unsqueeze(0)  # [1, 1, T]
-        with torch.no_grad():
+        wav_tensor = torch_mod.from_numpy(wav).float().unsqueeze(0).unsqueeze(0)  # [1, 1, T]
+        with torch_mod.no_grad():
             ref_codes = self.codec.encode_code(audio_or_path=wav_tensor).squeeze(0).squeeze(0)
         return ref_codes
 
@@ -207,8 +261,9 @@ class NeuTTSAir:
 
             # Torch decode
             else:
-                with torch.no_grad():
-                    codes = torch.tensor(speech_ids, dtype=torch.long)[None, None, :].to(
+                torch_mod = _require_torch("Decoding codec outputs")
+                with torch_mod.no_grad():
+                    codes = torch_mod.tensor(speech_ids, dtype=torch.long)[None, None, :].to(
                         self.codec.device
                     )
                     recon = self.codec.decode_code(codes).cpu().numpy()
@@ -255,9 +310,10 @@ class NeuTTSAir:
         return ids
 
     def _infer_torch(self, prompt_ids: list[int]) -> str:
-        prompt_tensor = torch.tensor(prompt_ids).unsqueeze(0).to(self.backbone.device)
+        torch_mod = _require_torch("Running transformer inference")
+        prompt_tensor = torch_mod.tensor(prompt_ids).unsqueeze(0).to(self.backbone.device)
         speech_end_id = self.tokenizer.convert_tokens_to_ids("<|SPEECH_GENERATION_END|>")
-        with torch.no_grad():
+        with torch_mod.no_grad():
             output_tokens = self.backbone.generate(
                 prompt_tensor,
                 max_length=self.max_context,
@@ -270,10 +326,11 @@ class NeuTTSAir:
             )
         input_length = prompt_tensor.shape[-1]
         output_str = self.tokenizer.decode(
-            output_tokens[0, input_length:].cpu().numpy().tolist(), add_special_tokens=False
+            output_tokens[0, input_length:].cpu().numpy().tolist(),
+            add_special_tokens=False,
         )
         return output_str
-    
+
     def _infer_ggml(self, ref_codes: list[int], ref_text: str, input_text: str) -> str:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
@@ -293,7 +350,9 @@ class NeuTTSAir:
         output_str = output["choices"][0]["text"]
         return output_str
 
-    def _infer_stream_ggml(self, ref_codes: torch.Tensor, ref_text: str, input_text: str) -> Generator[np.ndarray, None, None]:
+    def _infer_stream_ggml(
+        self, ref_codes: list[int], ref_text: str, input_text: str
+    ) -> Generator[np.ndarray, None, None]:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
 
@@ -314,19 +373,20 @@ class NeuTTSAir:
             temperature=1.0,
             top_k=50,
             stop=["<|SPEECH_GENERATION_END|>"],
-            stream=True
+            stream=True,
         ):
             output_str = item["choices"][0]["text"]
             token_cache.append(output_str)
 
-            if len(token_cache[n_decoded_tokens:]) >= self.streaming_frames_per_chunk + self.streaming_lookforward:
+            if (
+                len(token_cache[n_decoded_tokens:])
+                >= self.streaming_frames_per_chunk + self.streaming_lookforward
+            ):
 
                 # decode chunk
                 tokens_start = max(
-                    n_decoded_tokens
-                    - self.streaming_lookback
-                    - self.streaming_overlap_frames,
-                    0
+                    n_decoded_tokens - self.streaming_lookback - self.streaming_overlap_frames,
+                    0,
                 )
                 tokens_end = (
                     n_decoded_tokens
@@ -334,12 +394,11 @@ class NeuTTSAir:
                     + self.streaming_lookforward
                     + self.streaming_overlap_frames
                 )
-                sample_start = (
-                    n_decoded_tokens - tokens_start
-                ) * self.hop_length
+                sample_start = (n_decoded_tokens - tokens_start) * self.hop_length
                 sample_end = (
                     sample_start
-                    + (self.streaming_frames_per_chunk + 2 * self.streaming_overlap_frames) * self.hop_length
+                    + (self.streaming_frames_per_chunk + 2 * self.streaming_overlap_frames)
+                    * self.hop_length
                 )
                 curr_codes = token_cache[tokens_start:tokens_end]
                 recon = self._decode("".join(curr_codes))
@@ -352,9 +411,7 @@ class NeuTTSAir:
                     audio_cache, stride=self.streaming_stride_samples
                 )
                 new_samples_end = len(audio_cache) * self.streaming_stride_samples
-                processed_recon = processed_recon[
-                    n_decoded_samples:new_samples_end
-                ]
+                processed_recon = processed_recon[n_decoded_samples:new_samples_end]
                 n_decoded_samples = new_samples_end
                 n_decoded_tokens += self.streaming_frames_per_chunk
                 yield processed_recon
@@ -364,14 +421,11 @@ class NeuTTSAir:
         if len(token_cache) > n_decoded_tokens:
             tokens_start = max(
                 len(token_cache)
-                - (self.streaming_lookback + self.streaming_overlap_frames + remaining_tokens), 
-                0
+                - (self.streaming_lookback + self.streaming_overlap_frames + remaining_tokens),
+                0,
             )
             sample_start = (
-                len(token_cache) 
-                - tokens_start 
-                - remaining_tokens 
-                - self.streaming_overlap_frames
+                len(token_cache) - tokens_start - remaining_tokens - self.streaming_overlap_frames
             ) * self.hop_length
             curr_codes = token_cache[tokens_start:]
             recon = self._decode("".join(curr_codes))
