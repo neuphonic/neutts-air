@@ -15,6 +15,11 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS A
 - 👫Instant voice cloning - create your own speaker with as little as 3 seconds of audio
 - 🚄Simple LM + codec architecture built off a 0.5B backbone - the sweet spot between speed, size, and quality for real-world applications
 
+> [!CAUTION]
+> Websites like neutts.com are popping up and they're not affliated with Neuphonic, our github or this repo.
+>
+> We are on neuphonic.com only. Please be careful out there! 🙏
+
 ## Model Details
 
 NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
