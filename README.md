@@ -88,10 +88,18 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    To run llama-cpp with GPU suport (CUDA, MPS) support please refer to:
    https://pypi.org/project/llama-cpp-python/
 
-5. **(Optional) Install onnxruntime to use the `.onnx` decoder.**
-   If you want to run the onnxdecoder
-   ```
+5. **(Optional) Install ONNX Runtime to use the `.onnx` decoder.**
+   Choose the build that matches the execution provider you want to use:
+
+   ```bash
+   # CPU-only runtime
    pip install onnxruntime
+
+   # CUDA-enabled runtime (NVIDIA GPUs)
+   pip install onnxruntime-gpu
+
+   # DirectML runtime (Windows GPUs)
+   pip install onnxruntime-directml
    ```
 
 ## Running the Model
@@ -116,9 +124,8 @@ import soundfile as sf
 
 tts = NeuTTSAir(
    backbone_repo="neuphonic/neutts-air", # or 'neutts-air-q4-gguf' with llama-cpp-python installed
-   backbone_device="cpu",
    codec_repo="neuphonic/neucodec",
-   codec_device="cpu"
+   codec_device="auto"  # 'auto', 'cpu', 'cuda', 'cuda:0', 'directml', 'rocm', ...
 )
 input_text = "My name is Dave, and um, I'm from London."
 
@@ -131,6 +138,14 @@ ref_codes = tts.encode_reference(ref_audio_path)
 wav = tts.infer(input_text, ref_codes, ref_text)
 sf.write("test.wav", wav, 24000)
 ```
+
+`backbone_device` now defaults to `"auto"`, which prefers CUDA (or Apple MPS) when available and falls back to CPU otherwise. Override it manually if you need to pin the backbone to a specific device (e.g. `"cpu"` or `"cuda:1"`).
+
+`codec_device` follows similar rules for the ONNX decoder:
+
+- omit the argument or set `"auto"` to choose the first available GPU execution provider and transparently fall back to CPU if none are detected;
+- set `"cuda"`, `"cuda:<index>"`, `"directml"`, or `"rocm"` to prefer that GPU provider while still falling back to CPU when the provider is missing;
+- set `"cpu"` to keep the decoder on the CPU exclusively.
 
 ## Preparing References for Cloning
 
