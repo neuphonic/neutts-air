@@ -3,7 +3,15 @@ import soundfile as sf
 from neuttsair.neutts import NeuTTSAir
 
 
-def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav"):
+def main(
+    input_text,
+    ref_audio_path,
+    ref_text,
+    backbone,
+    output_path="output.wav",
+    backbone_device="auto",
+    codec_device="auto",
+):
     if not ref_audio_path or not ref_text:
         print("No reference audio or text provided.")
         return None
@@ -11,8 +19,9 @@ def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav
     # Initialize NeuTTSAir with the desired model and codec
     tts = NeuTTSAir(
         backbone_repo=backbone,
+        backbone_device=backbone_device,
         codec_repo="neuphonic/neucodec",
-        codec_device="auto"
+        codec_device=codec_device,
     )
 
     # Check if ref_text is a path if it is read it if not just return string
@@ -65,6 +74,18 @@ if __name__ == "__main__":
         default="neuphonic/neutts-air", 
         help="Huggingface repo containing the backbone checkpoint"
     )
+    parser.add_argument(
+        "--backbone_device",
+        type=str,
+        default="auto",
+        help="Device placement for the backbone (auto, cpu, cuda, gpu, mps)",
+    )
+    parser.add_argument(
+        "--codec_device",
+        type=str,
+        default="auto",
+        help="Device placement for the NeuCodec decoder (auto, cpu, cuda, ...)",
+    )
     args = parser.parse_args()
     main(
         input_text=args.input_text,
@@ -72,4 +93,6 @@ if __name__ == "__main__":
         ref_text=args.ref_text,
         backbone=args.backbone,
         output_path=args.output_path,
+        backbone_device=args.backbone_device,
+        codec_device=args.codec_device,
     )
