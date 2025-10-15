@@ -53,6 +53,12 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 
    # Ubuntu/Debian
    sudo apt install espeak
+
+   # Windows
+       # chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
+   choco install espeak-ng
+      # msi (need to add to path or folow commands below)
+   #find the msi at https://github.com/espeak-ng/espeak-ng/releases
    ```
 
    Mac users may need to put the following lines at the top of the neutts.py file.
@@ -62,7 +68,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    EspeakWrapper.set_library(_ESPEAK_LIBRARY)
    ```
 
-   Windows users may need to run (see https://github.com/bootphon/phonemizer/issues/163)
+   Windows users who installed via msi / do not have their install on path need to run the following (see https://github.com/bootphon/phonemizer/issues/163)
    ```pwsh
    $env:PHONEMIZER_ESPEAK_LIBRARY = "c:\Program Files\eSpeak NG\libespeak-ng.dll"
    $env:PHONEMIZER_ESPEAK_PATH = "c:\Program Files\eSpeak NG"
