@@ -54,11 +54,11 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    # Ubuntu/Debian
    sudo apt install espeak
 
-   # Windows
-       # chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
+   # Windows install
+       # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
    choco install espeak-ng
-      # msi (need to add to path or folow commands below)
-   #find the msi at https://github.com/espeak-ng/espeak-ng/releases
+      # via msi (need to add to path or folow the "Windows users who installed via msi" below)
+   # find the msi at https://github.com/espeak-ng/espeak-ng/releases
    ```
 
    Mac users may need to put the following lines at the top of the neutts.py file.
