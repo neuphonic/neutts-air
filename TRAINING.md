@@ -8,6 +8,7 @@ NeuTTS-Air follows [Llasa](https://github.com/zhenye234/LLaSA_training) in its t
 # Finetuning on your own dataset
 
 You can prepare your own dataset by following these steps:
+
 1. Encode your audio files using the [NeuCodec](https://huggingface.co/neuphonic/neucodec) model into a format similar to the [Emilia-YODAS dataset](https://huggingface.co/datasets/neuphonic/emilia-yodas-english-neucodec).
 2. Setup your configuration file similar to the [example config](finetuning_config.yaml).
 3. Check and modify the phonemizer and the tokenizer in the script such that they suit your dataset/task.
@@ -15,7 +16,11 @@ You can prepare your own dataset by following these steps:
 
 # Finetuning config
 
-An example finetuning config lives in `examples/finetuning_config.yaml`. In the past we've found a learning rate of `1e-5` to `4e-5` to have worked well for finetuning depending on the size of the dataset. You can also modify the batch size and the learning rate warmup which could help with training stability.
+An example finetuning config lives in `examples/finetune_config.yaml`.
+
+- In the past we've found a learning rate of `1e-5` to `4e-5` to have worked well for finetuning depending on the size of the dataset.
+- We generally find that you do not need many steps for finetuning. For example, for a dataset of 10 hours, 1000 to 2000 steps is often sufficient.
+- A warmup ratio as well as different learning rate schedulers can be experimented with to see what works best for your dataset.
 
 # Training from scratch or using additional labels
 
