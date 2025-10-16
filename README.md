@@ -28,11 +28,12 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 
 ## Get Started
 
+> [!NOTE]
+> We have added a [streaming example](examples/streaming_example.py) using the `llama-cpp-python` library as well as a [finetuning script](examples/finetune.py). For finetuning, please refer to the [finetune guide](examples/TRAINING.md) for more details.
+
 1. **Clone Git Repo**
    ```bash
    git clone https://github.com/neuphonic/neutts-air.git
-   ```
-   ```bash
    cd neutts-air
    ```
 
@@ -72,12 +73,12 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 
    The inference is compatible and tested on `python>=3.11`.
 
-    ```
-    pip install -r requirements.txt
-    ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 4. **(Optional) Install Llama-cpp-python to use the `GGUF` models.**
-   ```
+   ```bash
    pip install llama-cpp-python
    ```
    To run llama-cpp with GPU suport (CUDA, MPS) support please refer to:
@@ -85,7 +86,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 
 5. **(Optional) Install onnxruntime to use the `.onnx` decoder.**
    If you want to run the onnxdecoder
-   ```
+   ```bash
    pip install onnxruntime
    ```
 
