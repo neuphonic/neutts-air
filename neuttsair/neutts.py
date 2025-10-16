@@ -1,3 +1,4 @@
+from typing import Generator
 from pathlib import Path
 import librosa
 import numpy as np
@@ -6,7 +7,35 @@ import re
 import perth
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
+from threading import Thread
+
+
+def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
+    # original impl --> https://github.com/facebookresearch/encodec/blob/main/encodec/utils.py
+    assert len(frames)
+    dtype = frames[0].dtype
+    shape = frames[0].shape[:-1]
+
+    total_size = 0
+    for i, frame in enumerate(frames):
+        frame_end = stride * i + frame.shape[-1]
+        total_size = max(total_size, frame_end)
+
+    sum_weight = np.zeros(total_size, dtype=dtype)
+    out = np.zeros(*shape, total_size, dtype=dtype)
+
+    offset: int = 0
+    for frame in frames:
+        frame_length = frame.shape[-1]
+        t = np.linspace(0, 1, frame_length + 2, dtype=dtype)[1:-1]
+        weight = np.abs(0.5 - (t - 0.5))
+
+        out[..., offset : offset + frame_length] += weight * frame
+        sum_weight[offset : offset + frame_length] += weight
+        offset += stride
+    assert sum_weight.min() > 0
+    return out / sum_weight
 
 
 class NeuTTSAir:
@@ -22,9 +51,14 @@ class NeuTTSAir:
         # Consts
         self.sample_rate = 24_000
         self.max_context = 2048
+        self.hop_length = 480
+        self.streaming_overlap_frames = 1
+        self.streaming_frames_per_chunk = 25
+        self.streaming_lookforward = 5
+        self.streaming_lookback = 50
+        self.streaming_stride_samples = self.streaming_frames_per_chunk * self.hop_length
 
         # ggml & onnx flags
-        self._grammar = None  # set with a ggml model
         self._is_quantized_model = False
         self._is_onnx_codec = False
 
@@ -133,6 +167,24 @@ class NeuTTSAir:
         watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=24_000)
 
         return watermarked_wav
+    
+    def infer_stream(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> Generator[np.ndarray, None, None]:
+        """
+        Perform streaming inference to generate speech from text using the TTS model and reference audio.
+
+        Args:
+            text (str): Input text to be converted to speech.
+            ref_codes (np.ndarray | torch.tensor): Encoded reference.
+            ref_text (str): Reference text for reference audio. Defaults to None.
+        Yields:
+            np.ndarray: Generated speech waveform.
+        """ 
+
+        if self._is_quantized_model:
+            return self._infer_stream_ggml(ref_codes, ref_text, text)
+
+        else:
+            raise NotImplementedError("Streaming is not implemented for the torch backend!")
 
     def encode_reference(self, ref_audio_path: str | Path):
         wav, _ = librosa.load(ref_audio_path, sr=16000, mono=True)
@@ -221,7 +273,7 @@ class NeuTTSAir:
             output_tokens[0, input_length:].cpu().numpy().tolist(), add_special_tokens=False
         )
         return output_str
-
+    
     def _infer_ggml(self, ref_codes: list[int], ref_text: str, input_text: str) -> str:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
@@ -240,3 +292,93 @@ class NeuTTSAir:
         )
         output_str = output["choices"][0]["text"]
         return output_str
+
+    def _infer_stream_ggml(self, ref_codes: torch.Tensor, ref_text: str, input_text: str) -> Generator[np.ndarray, None, None]:
+        ref_text = self._to_phones(ref_text)
+        input_text = self._to_phones(input_text)
+
+        codes_str = "".join([f"<|speech_{idx}|>" for idx in ref_codes])
+        prompt = (
+            f"user: Convert the text to speech:<|TEXT_PROMPT_START|>{ref_text} {input_text}"
+            f"<|TEXT_PROMPT_END|>\nassistant:<|SPEECH_GENERATION_START|>{codes_str}"
+        )
+
+        audio_cache: list[np.ndarray] = []
+        token_cache: list[str] = [f"<|speech_{idx}|>" for idx in ref_codes]
+        n_decoded_samples: int = 0
+        n_decoded_tokens: int = len(ref_codes)
+
+        for item in self.backbone(
+            prompt,
+            max_tokens=self.max_context,
+            temperature=1.0,
+            top_k=50,
+            stop=["<|SPEECH_GENERATION_END|>"],
+            stream=True
+        ):
+            output_str = item["choices"][0]["text"]
+            token_cache.append(output_str)
+
+            if len(token_cache[n_decoded_tokens:]) >= self.streaming_frames_per_chunk + self.streaming_lookforward:
+
+                # decode chunk
+                tokens_start = max(
+                    n_decoded_tokens
+                    - self.streaming_lookback
+                    - self.streaming_overlap_frames,
+                    0
+                )
+                tokens_end = (
+                    n_decoded_tokens
+                    + self.streaming_frames_per_chunk
+                    + self.streaming_lookforward
+                    + self.streaming_overlap_frames
+                )
+                sample_start = (
+                    n_decoded_tokens - tokens_start
+                ) * self.hop_length
+                sample_end = (
+                    sample_start
+                    + (self.streaming_frames_per_chunk + 2 * self.streaming_overlap_frames) * self.hop_length
+                )
+                curr_codes = token_cache[tokens_start:tokens_end]
+                recon = self._decode("".join(curr_codes))
+                recon = self.watermarker.apply_watermark(recon, sample_rate=24_000)
+                recon = recon[sample_start:sample_end]
+                audio_cache.append(recon)
+
+                # postprocess
+                processed_recon = _linear_overlap_add(
+                    audio_cache, stride=self.streaming_stride_samples
+                )
+                new_samples_end = len(audio_cache) * self.streaming_stride_samples
+                processed_recon = processed_recon[
+                    n_decoded_samples:new_samples_end
+                ]
+                n_decoded_samples = new_samples_end
+                n_decoded_tokens += self.streaming_frames_per_chunk
+                yield processed_recon
+
+        # final decoding handled seperately as non-constant chunk size
+        remaining_tokens = len(token_cache) - n_decoded_tokens
+        if len(token_cache) > n_decoded_tokens:
+            tokens_start = max(
+                len(token_cache)
+                - (self.streaming_lookback + self.streaming_overlap_frames + remaining_tokens), 
+                0
+            )
+            sample_start = (
+                len(token_cache) 
+                - tokens_start 
+                - remaining_tokens 
+                - self.streaming_overlap_frames
+            ) * self.hop_length
+            curr_codes = token_cache[tokens_start:]
+            recon = self._decode("".join(curr_codes))
+            recon = self.watermarker.apply_watermark(recon, sample_rate=24_000)
+            recon = recon[sample_start:]
+            audio_cache.append(recon)
+
+            processed_recon = _linear_overlap_add(audio_cache, stride=self.streaming_stride_samples)
+            processed_recon = processed_recon[n_decoded_samples:]
+            yield processed_recon

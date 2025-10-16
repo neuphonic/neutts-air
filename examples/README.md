@@ -36,3 +36,15 @@ python -m examples.onnx_example \
   --ref_text samples/dave.txt \
   --backbone neuphonic/neutts-air-q4-gguf
 ```
+
+### Streaming Support 
+
+To stream the model output in chunks, try out the `onnx_streaming.py` example. For streaming, only the GGUF backends are currently supported. Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
+
+```bash
+python -m examples.basic_streaming_example \
+  --input_text "My name is Dave, and um, I'm from London" \
+  --ref_codes samples/dave.pt \
+  --ref_text samples/dave.txt \
+  --backbone neuphonic/neutts-air-q4-gguf
+```
