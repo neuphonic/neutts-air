@@ -1,6 +1,5 @@
 # run info
 restore_from: "neuphonic/neutts-air"
-base_model: "Qwen/Qwen2.5-0.5B"
 save_root: "/data"
 run_name: "neutts-finetune"
 
