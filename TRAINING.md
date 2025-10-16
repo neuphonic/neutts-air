@@ -13,6 +13,10 @@ You can prepare your own dataset by following these steps:
 3. Check and modify the phonemizer and the tokenizer in the script such that they suit your dataset/task.
 4. Run the finetuning script with your dataset and configuration file.
 
+# Finetuning config
+
+An example finetuning config lives in `examples/finetuning_config.yaml`. In the past we've found a learning rate of `1e-5` to `4e-5` to have worked well for finetuning depending on the size of the dataset. You can also modify the batch size and the learning rate warmup which could help with training stability.
+
 # Training from scratch or using additional labels
 
 The NeuTTS Air model is based on the Qwen2.5 0.5B model. You can change this in the config file to use this instead of the trained NeuTTS Air model. This means you would need to add the speech token tags to the vocabulary. You can also add additional labels to the dataset by modifying model vocabulary. Both of these steps can be done as such in the script:

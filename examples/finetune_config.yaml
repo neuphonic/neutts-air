@@ -16,4 +16,3 @@ max_steps: 500000
 logging_steps: 100
 save_steps: 20000
 seed: 1337
-  
