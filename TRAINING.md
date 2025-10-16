@@ -34,8 +34,10 @@ codec_special_tokens = [
     "<|SPEECH_REPLACE|>",
     "<|SPEECH_GENERATION_START|>",
     "<|SPEECH_GENERATION_END|>",
-    "<|EN|>",
+    "<|EN|>",  # These tags are examples of what you can add to enable features if you have the labels in your dataset
     "<|ZH|>",
+    "<|LAUGHING|>",
+    "<|WHISPERING|>",
 ]
 codec_tokens = [f"<|speech_{idx}|>" for idx in range(config.codebook_size)]
 
