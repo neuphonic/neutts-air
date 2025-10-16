@@ -4,7 +4,7 @@ HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF
 
 [Demo Video](https://github.com/user-attachments/assets/020547bc-9e3e-440f-b016-ae61ca645184)
 
-*Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI*
+_Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI_
 
 State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS Air is the world’s first super-realistic, on-device, TTS speech language model with instant voice cloning. Built off a 0.5B LLM backbone, NeuTTS Air brings natural-sounding speech, real-time performance, built-in security and speaker cloning to your local device - unlocking a new category of embedded voice agents, assistants, toys, and compliance-safe apps.
 
@@ -23,6 +23,7 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS A
 ## Model Details
 
 NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
+
 - **Supported Languages**: English
 - **Audio Codec**: [NeuCodec](https://huggingface.co/neuphonic/neucodec) - our 50hz neural audio codec that achieves exceptional audio quality at low bitrates using a single codebook
 - **Context Window**: 2048 tokens, enough for processing ~30 seconds of audio (including prompt duration)
@@ -34,9 +35,10 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 ## Get Started
 
 > [!NOTE]
-> We have added a [streaming example](examples/streaming_example.py) using the `llama-cpp-python` library as well as a [finetuning script](examples/finetune.py). For finetuning, please refer to the [finetune guide](examples/TRAINING.md) for more details.
+> We have added a [streaming example](examples/basic_streaming_example.py) using the `llama-cpp-python` library as well as a [finetuning script](examples/finetune.py). For finetuning, please refer to the [finetune guide](TRAINING.md) for more details.
 
 1. **Clone Git Repo**
+
    ```bash
    git clone https://github.com/neuphonic/neutts-air.git
    cd neutts-air
@@ -57,6 +59,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    ```
 
    Mac users may need to put the following lines at the top of the neutts.py file.
+
    ```python
    from phonemizer.backend.espeak.wrapper import EspeakWrapper
    _ESPEAK_LIBRARY = '/opt/homebrew/Cellar/espeak/1.48.04_1/lib/libespeak.1.1.48.dylib'  #use the Path to the library.
@@ -64,6 +67,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    ```
 
    Windows users may need to run (see https://github.com/bootphon/phonemizer/issues/163)
+
    ```pwsh
    $env:PHONEMIZER_ESPEAK_LIBRARY = "c:\Program Files\eSpeak NG\libespeak-ng.dll"
    $env:PHONEMIZER_ESPEAK_PATH = "c:\Program Files\eSpeak NG"
@@ -83,9 +87,11 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    ```
 
 4. **(Optional) Install Llama-cpp-python to use the `GGUF` models.**
+
    ```bash
    pip install llama-cpp-python
    ```
+
    To run llama-cpp with GPU suport (CUDA, MPS) support please refer to:
    https://pypi.org/project/llama-cpp-python/
 
@@ -98,6 +104,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 ## Running the Model
 
 Run the basic example script to synthesize speech:
+
 ```bash
 python -m examples.basic_example \
   --input_text "My name is Dave, and um, I'm from London" \
@@ -185,7 +192,9 @@ To run the pre commit hooks to contribute to this project run:
 ```bash
 pip install pre-commit
 ```
+
 Then:
+
 ```bash
 pre-commit install
 ```
