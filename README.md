@@ -140,6 +140,19 @@ wav = tts.infer(input_text, ref_codes, ref_text)
 sf.write("test.wav", wav, 24000)
 ```
 
+### Streaming
+
+Speech can also be synthesised in _streaming mode_, where audio is generated in chunks and plays as generated. Note that this requires pyaudio to be installed. To do this, run: 
+
+```bash
+python -m examples.basic_streaming_example \
+  --input_text "My name is Dave, and um, I'm from London" \
+  --ref_codes samples/dave.pt \
+  --ref_text samples/dave.txt
+```
+
+Again, a particular model repo can be specified with the `--backbone` argument - note that for streaming the model must be in GGUF format.
+
 ## Preparing References for Cloning
 
 NeuTTS Air requires two inputs:
