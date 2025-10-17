@@ -1,0 +1,18 @@
+# run info
+restore_from: "neuphonic/neutts-air"
+save_root: "/data"
+run_name: "neutts-finetune"
+
+# model info
+codebook_size: 65536 # xcodec
+max_seq_len: 2048
+lr: 0.00004
+lr_scheduler_type: "cosine"
+warmup_ratio: 0.00
+
+# train info
+per_device_train_batch_size: 2
+max_steps: 10000
+logging_steps: 100
+save_steps: 20000
+seed: 1337
