@@ -46,7 +46,7 @@ def main(input_text, ref_codes_path, ref_text, backbone):
         channels=1,
         rate=tts.sample_rate,
         output=True,
-        frames_per_buffer=chunk_samples,
+        frames_per_buffer=int(chunk_samples),
     )
     
     total_audio_samples = 0
