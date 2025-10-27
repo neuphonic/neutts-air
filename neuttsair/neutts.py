@@ -413,9 +413,17 @@ async def lifespan(app: FastAPI):
     logging.info("Loading model...")
 
     app.state.llm = SimpleNamespace()
+    app.state.llm_gguf = SimpleNamespace()
 
     app.state.llm.model = NeuTTSAir(
         backbone_repo='./models/llm',
+        backbone_device="cpu",
+        codec_repo="./models/codec/pytorch_model.bin",
+        codec_device="cpu"
+    )
+
+    app.state.llm_gguf.model = NeuTTSAir(
+        backbone_repo='./models/llm-q4_0.gguf',
         backbone_device="cpu",
         codec_repo="./models/codec/pytorch_model.bin",
         codec_device="cpu"
@@ -431,15 +439,20 @@ class LLMRequest(BaseModel):
     text: str
     ref_audio_path: str | Path
     ref_text: str
+    gguf: bool
 
 
 @app.post("/generate")
 def generate(request: LLMRequest):
-    model = app.state.llm.model
+    if request.gguf:
+        model = app.state.llm_gguf.model
+    else:
+        model = app.state.llm.model
+
     logging.info("Encoding reference audio...")
     ref_codes = model.encode_reference(request.ref_audio_path)
-    logging.info("Generating audio...")
 
+    logging.info("Generating audio...")
     wav = model.infer(request.text, ref_codes, request.ref_text)
 
     # Convert audio to WAV format
