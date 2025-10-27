@@ -10,9 +10,11 @@ def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav
 
     # Initialize NeuTTSAir with the desired model and codec
     tts = NeuTTSAir(
-        backbone_repo=backbone,
+        # backbone_repo=backbone,
+        backbone_repo="./models/llm",
         backbone_device="cpu",
-        codec_repo="neuphonic/neucodec",
+        # codec_repo="neuphonic/neucodec",
+        codec_repo="./models/codec/pytorch_model.bin",
         codec_device="cpu"
     )
 
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     # get arguments from command line
     import argparse
 
-    parser = argparse.ArgumentParser(description="NeuTTSAir Example")
+    parser = argparse.ArgumentParser(description="Cloud Imperium Demo")
     parser.add_argument(
         "--input_text", 
         type=str, 

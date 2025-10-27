@@ -113,35 +113,51 @@ class NeuTTSAir:
     def _load_codec(self, codec_repo, codec_device):
 
         print(f"Loading codec from: {codec_repo} on {codec_device} ...")
-        match codec_repo:
-            case "neuphonic/neucodec":
-                self.codec = NeuCodec.from_pretrained(codec_repo)
-                self.codec.eval().to(codec_device)
-            case "neuphonic/distill-neucodec":
-                self.codec = DistillNeuCodec.from_pretrained(codec_repo)
-                self.codec.eval().to(codec_device)
-            case "neuphonic/neucodec-onnx-decoder":
+        # match codec_repo:
+        #     case "neuphonic/neucodec":
+        #         self.codec = NeuCodec.from_pretrained(codec_repo)
+        #         self.codec.eval().to(codec_device)
+        #     case "neuphonic/distill-neucodec":
+        #         self.codec = DistillNeuCodec.from_pretrained(codec_repo)
+        #         self.codec.eval().to(codec_device)
+        #     case "neuphonic/neucodec-onnx-decoder":
 
-                if codec_device != "cpu":
-                    raise ValueError("Onnx decoder only currently runs on CPU.")
+        #         if codec_device != "cpu":
+        #             raise ValueError("Onnx decoder only currently runs on CPU.")
 
-                try:
-                    from neucodec import NeuCodecOnnxDecoder
-                except ImportError as e:
-                    raise ImportError(
-                        "Failed to import the onnx decoder."
-                        " Ensure you have onnxruntime installed as well as neucodec >= 0.0.4."
-                    ) from e
+        #         try:
+        #             from neucodec import NeuCodecOnnxDecoder
+        #         except ImportError as e:
+        #             raise ImportError(
+        #                 "Failed to import the onnx decoder."
+        #                 " Ensure you have onnxruntime installed as well as neucodec >= 0.0.4."
+        #             ) from e
 
-                self.codec = NeuCodecOnnxDecoder.from_pretrained(codec_repo)
-                self._is_onnx_codec = True
+        #         self.codec = NeuCodecOnnxDecoder.from_pretrained(codec_repo)
+        #         self._is_onnx_codec = True
 
-            case _:
-                raise ValueError(
-                    "Invalid codec repo! Must be one of:"
-                    " 'neuphonic/neucodec', 'neuphonic/distill-neucodec',"
-                    " 'neuphonic/neucodec-onnx-decoder'."
-                )
+        #     case _:
+        #         raise ValueError(
+        #             "Invalid codec repo! Must be one of:"
+        #             " 'neuphonic/neucodec', 'neuphonic/distill-neucodec',"
+        #             " 'neuphonic/neucodec-onnx-decoder'."
+        #         )
+
+        self.codec = NeuCodec(24_000, 480)
+
+        # load weights
+        ignore_keys = ["fc_post_s", "SemanticDecoder"] # for base neucodec
+        state_dict = torch.load(codec_repo, codec_device)
+        contains_list = lambda s, l: any(i in s for i in l)
+        state_dict = {
+            k:v for k, v in state_dict.items() 
+            if not contains_list(k, ignore_keys)
+        }
+
+        # TODO: we can move to strict loading once we clean up the checkpoints
+        self.codec.load_state_dict(state_dict, strict=False)
+
+        self.codec.eval().to(codec_device)
 
     def infer(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> np.ndarray:
         """
