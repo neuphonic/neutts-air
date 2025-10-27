@@ -10,11 +10,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install llama-cpp-python onnxruntime
 RUN pip install uvicorn FastAPI
+RUN hf download facebook/w2v-bert-2.0
 
 COPY models/ ./models/
-# COPY samples/ ./samples/
 COPY neuttsair/ ./neuttsair/
-# COPY examples/basic_example.py ./basic_example.py
-
 # just for now so can peek inside dockerfile
 CMD ["uvicorn", "neuttsair.neutts:app", "--host", "0.0.0.0", "--port", "80"] 

@@ -16,4 +16,4 @@
 ## Usage Examples
 
 * `python -m save_audio "This is a test sentence." example_1.wav False samples/jo.wav samples/jo.txt`
-* * `python -m save_audio "And here is another example sentence, this time one that is significantly longer." example_2.wav False samples/dave.wav samples/dave.txt`
+* `python -m save_audio "And here is another example sentence, this time one that is significantly longer." example_2.wav False samples/dave.wav samples/dave.txt`
