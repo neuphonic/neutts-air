@@ -93,9 +93,9 @@ class NeuTTSAir:
                     "    pip install llama-cpp-python"
                 ) from e
 
-            self.backbone = Llama.from_pretrained(
-                repo_id=backbone_repo,
-                filename="*.gguf",
+            self.backbone = Llama(
+                model_path=backbone_repo,
+                # filename="*.gguf",
                 verbose=False,
                 n_gpu_layers=-1 if backbone_device == "gpu" else 0,
                 n_ctx=self.max_context,

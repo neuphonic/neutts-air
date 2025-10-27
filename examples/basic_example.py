@@ -10,8 +10,7 @@ def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav
 
     # Initialize NeuTTSAir with the desired model and codec
     tts = NeuTTSAir(
-        # backbone_repo=backbone,
-        backbone_repo="./models/llm",
+        backbone_repo=backbone,
         backbone_device="cpu",
         # codec_repo="neuphonic/neucodec",
         codec_repo="./models/codec/pytorch_model.bin",
@@ -65,8 +64,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--backbone", 
         type=str, 
-        default="neuphonic/neutts-air", 
-        help="Huggingface repo containing the backbone checkpoint"
+        default="./models/llm", 
+        help="Path to generative model to use"
     )
     args = parser.parse_args()
     main(
