@@ -9,6 +9,13 @@ from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
 from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
 from threading import Thread
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Response
+import logging
+from types import SimpleNamespace
+from pydantic import BaseModel, ConfigDict
+import io
+from scipy.io.wavfile import write
 
 
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
@@ -398,3 +405,53 @@ class NeuTTSAir:
             processed_recon = _linear_overlap_add(audio_cache, stride=self.streaming_stride_samples)
             processed_recon = processed_recon[n_decoded_samples:]
             yield processed_recon
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle model loading on startup to save time on endpoint calls"""
+    logging.info("Loading model...")
+
+    app.state.llm = SimpleNamespace()
+
+    app.state.llm.model = NeuTTSAir(
+        backbone_repo='./models/llm',
+        backbone_device="cpu",
+        codec_repo="./models/codec/pytorch_model.bin",
+        codec_device="cpu"
+    )
+
+    logging.info("Model loaded successfully!")
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+
+class LLMRequest(BaseModel):
+    text: str
+    ref_audio_path: str | Path
+    ref_text: str
+
+
+@app.post("/generate")
+def generate(request: LLMRequest):
+    model = app.state.llm.model
+    logging.info("Encoding reference audio...")
+    ref_codes = model.encode_reference(request.ref_audio_path)
+    logging.info("Generating audio...")
+
+    wav = model.infer(request.text, ref_codes, request.ref_text)
+
+    # Convert audio to WAV format
+    wav_buffer = io.BytesIO()
+    write(
+        wav_buffer,
+        24000,
+        (wav * 32767).astype(np.int16),
+    )
+    wav_buffer.seek(0)
+
+    return Response(
+        content=wav_buffer.getvalue(),
+        media_type="audio/wav"
+    )
