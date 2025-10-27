@@ -8,8 +8,8 @@ API_URL = "http://localhost:8081"
 def save_generated_audio(
     text: str, output_path: str = "test.wav", 
     gguf: bool = False,
-    ref_audio_path: str = "./samples/dave.wav", 
-    ref_text: str = "./samples/dave.txt"
+    ref_audio_path: str = "samples/dave.wav", 
+    ref_text: str = "samples/dave.txt"
 ):
     with open(ref_text, "r") as f:
         ref_text = f.read().strip()

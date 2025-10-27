@@ -7,4 +7,4 @@ build:
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile -t $(IMAGE_NAME) .
 
 run:
-	docker run --rm --name $(CONTAINER_NAME) -p 8081:80 $(IMAGE_NAME)
+	docker run --rm --name $(CONTAINER_NAME) -p 8081:80 -v ./samples:/app/samples/ $(IMAGE_NAME)

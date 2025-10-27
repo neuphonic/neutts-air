@@ -12,7 +12,7 @@ RUN pip install llama-cpp-python onnxruntime
 RUN pip install uvicorn FastAPI
 
 COPY models/ ./models/
-COPY samples/ ./samples/
+# COPY samples/ ./samples/
 COPY neuttsair/ ./neuttsair/
 COPY examples/basic_example.py ./basic_example.py
 
