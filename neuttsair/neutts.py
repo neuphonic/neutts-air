@@ -423,7 +423,7 @@ async def lifespan(app: FastAPI):
     )
 
     app.state.llm_gguf.model = NeuTTSAir(
-        backbone_repo='./models/llm-q4_0.gguf',
+        backbone_repo='./models/llm-q8_0.gguf',
         backbone_device="cpu",
         codec_repo="./models/codec/pytorch_model.bin",
         codec_device="cpu"

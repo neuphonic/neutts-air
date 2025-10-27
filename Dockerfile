@@ -14,7 +14,7 @@ RUN pip install uvicorn FastAPI
 COPY models/ ./models/
 # COPY samples/ ./samples/
 COPY neuttsair/ ./neuttsair/
-COPY examples/basic_example.py ./basic_example.py
+# COPY examples/basic_example.py ./basic_example.py
 
 # just for now so can peek inside dockerfile
 CMD ["uvicorn", "neuttsair.neutts:app", "--host", "0.0.0.0", "--port", "80"] 
