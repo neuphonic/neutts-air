@@ -1,6 +1,6 @@
 # Setup
 
-1. Pull docker container
+1. Pull docker container `cloud-imperium-tts-demo-medium`
 2. Copy `save_audio.py` and `samples/` into base directory
 3. If desired, add additional speaker reference audios `<speaker>.wav` and corresponding transcripts `<speaker>.txt` to `samples/`
 4. Ensure you are using python >= 3.8 with packages `requests`, `fire` installed
