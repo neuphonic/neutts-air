@@ -21,10 +21,10 @@ For optimal performance, reference audio samples should be:
 1.  `cd` into base directory
 2. Run container with `docker run --rm --name cloud-imperium-tts-demo-medium -p 8081:80 -v ./samples:/app/samples/ cloud-imperium-tts-demo-medium` and wait for application startup to complete
 3. In a separate terminal, `cd` into base directory
-4. Synthesise speech with the command `python -m save_audio "<text_to_generate>" <output_file_path>.wav <gguf> <ref_audio_path>.wav <ref_text_path>`
+4. Synthesise speech with the command `python -m save_audio "<text_to_generate>" <output_file_path>.wav <ref_audio_path>.wav <ref_text_path>`
 5. Play `<output_file_path>.wav`
 
 ## Usage Examples
 
-* `python -m save_audio "This is a test sentence." example_1.wav False samples/jo.wav samples/jo.txt`
-* `python -m save_audio "And here is another example sentence, this time one that is significantly longer." example_2.wav False samples/dave.wav samples/dave.txt`
+* `python -m save_audio "This is a test sentence." example_1.wav samples/jo.wav samples/jo.txt`
+* `python -m save_audio "And here is another example sentence, this time one that is significantly longer." example_2.wav samples/dave.wav samples/dave.txt`
