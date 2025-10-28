@@ -16,6 +16,8 @@ from types import SimpleNamespace
 from pydantic import BaseModel, ConfigDict
 import io
 from scipy.io.wavfile import write
+from functools import lru_cache
+import os
 
 
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
@@ -210,6 +212,12 @@ class NeuTTSAir:
             raise NotImplementedError("Streaming is not implemented for the torch backend!")
 
     def encode_reference(self, ref_audio_path: str | Path):
+        ref_audio_path = Path(ref_audio_path)
+        mtime = os.path.getmtime(ref_audio_path) # modification time for cache
+        return self._encode_reference_cached(str(ref_audio_path), mtime).clone() # prevent mutating cached result  
+    
+    @lru_cache(maxsize=10)
+    def _encode_reference_cached(self, ref_audio_path: str, mtime: float):
         wav, _ = librosa.load(ref_audio_path, sr=16000, mono=True)
         wav_tensor = torch.from_numpy(wav).float().unsqueeze(0).unsqueeze(0)  # [1, 1, T]
         with torch.no_grad():
