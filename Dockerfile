@@ -11,10 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install llama-cpp-python onnxruntime
 RUN pip install uvicorn FastAPI
 RUN hf download facebook/w2v-bert-2.0
-# RUN hf download neuphonic/neucodec
-# RUN hf download neuphonic/neucodec-onnx-decoder
+RUN hf download neuphonic/neucodec
+RUN hf download neuphonic/neucodec-onnx-decoder
 
-COPY models/ ./models/
+COPY models/llm ./models/llm
 COPY neuttsair/ ./neuttsair/
 # just for now so can peek inside dockerfile
 CMD ["uvicorn", "neuttsair.neutts:app", "--host", "0.0.0.0", "--port", "80"] 

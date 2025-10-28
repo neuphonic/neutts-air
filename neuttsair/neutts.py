@@ -53,7 +53,8 @@ class NeuTTSAir:
         self,
         backbone_repo="neuphonic/neutts-air",
         backbone_device="cpu",
-        codec_repo="neuphonic/neucodec",
+        encoder_repo="neuphonic/neucodec",
+        decoder_repo="neuphonic/neucodec",
         codec_device="cpu",
     ):
 
@@ -69,7 +70,7 @@ class NeuTTSAir:
 
         # ggml & onnx flags
         self._is_quantized_model = False
-        self._is_onnx_codec = False
+        self._is_onnx_decoder = False
 
         # HF tokenizer
         self.tokenizer = None
@@ -82,7 +83,12 @@ class NeuTTSAir:
 
         self._load_backbone(backbone_repo, backbone_device)
 
-        self._load_codec(codec_repo, codec_device)
+        self._load_codec(encoder_repo, codec_device)
+
+        if "onnx" in decoder_repo:
+            self._load_codec(decoder_repo, codec_device)
+        else:
+            self.decoder = self.encoder
 
         # Load watermarker
         self.watermarker = perth.PerthImplicitWatermarker()
@@ -122,51 +128,28 @@ class NeuTTSAir:
     def _load_codec(self, codec_repo, codec_device):
 
         print(f"Loading codec from: {codec_repo} on {codec_device} ...")
-        # match codec_repo:
-        #     case "neuphonic/neucodec":
-        #         self.codec = NeuCodec.from_pretrained(codec_repo)
-        #         self.codec.eval().to(codec_device)
+        match codec_repo:
+            case "neuphonic/neucodec":
+                self.encoder = NeuCodec.from_pretrained(codec_repo)
+                self.encoder.eval().to(codec_device)
         #     case "neuphonic/distill-neucodec":
         #         self.codec = DistillNeuCodec.from_pretrained(codec_repo)
         #         self.codec.eval().to(codec_device)
-        #     case "neuphonic/neucodec-onnx-decoder":
+            case "neuphonic/neucodec-onnx-decoder":
 
-        #         if codec_device != "cpu":
-        #             raise ValueError("Onnx decoder only currently runs on CPU.")
+                if codec_device != "cpu":
+                    raise ValueError("Onnx decoder only currently runs on CPU.")
 
-        #         try:
-        #             from neucodec import NeuCodecOnnxDecoder
-        #         except ImportError as e:
-        #             raise ImportError(
-        #                 "Failed to import the onnx decoder."
-        #                 " Ensure you have onnxruntime installed as well as neucodec >= 0.0.4."
-        #             ) from e
+                try:
+                    from neucodec import NeuCodecOnnxDecoder
+                except ImportError as e:
+                    raise ImportError(
+                        "Failed to import the onnx decoder."
+                        " Ensure you have onnxruntime installed as well as neucodec >= 0.0.4."
+                    ) from e
 
-        #         self.codec = NeuCodecOnnxDecoder.from_pretrained(codec_repo)
-        #         self._is_onnx_codec = True
-
-        #     case _:
-        #         raise ValueError(
-        #             "Invalid codec repo! Must be one of:"
-        #             " 'neuphonic/neucodec', 'neuphonic/distill-neucodec',"
-        #             " 'neuphonic/neucodec-onnx-decoder'."
-        #         )
-
-        self.codec = NeuCodec(24_000, 480)
-
-        # load weights
-        ignore_keys = ["fc_post_s", "SemanticDecoder"] # for base neucodec
-        state_dict = torch.load(codec_repo, codec_device)
-        contains_list = lambda s, l: any(i in s for i in l)
-        state_dict = {
-            k:v for k, v in state_dict.items() 
-            if not contains_list(k, ignore_keys)
-        }
-
-        # TODO: we can move to strict loading once we clean up the checkpoints
-        self.codec.load_state_dict(state_dict, strict=False)
-
-        self.codec.eval().to(codec_device)
+                self.decoder = NeuCodecOnnxDecoder.from_pretrained(codec_repo)
+                self._is_onnx_decoder = True
 
     def infer(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> np.ndarray:
         """
@@ -214,15 +197,19 @@ class NeuTTSAir:
     def encode_reference(self, ref_audio_path: str | Path):
         ref_audio_path = Path(ref_audio_path)
         mtime = os.path.getmtime(ref_audio_path) # modification time for cache
-        return self._encode_reference_cached(str(ref_audio_path), mtime).clone() # prevent mutating cached result  
+
+        self._encode_reference_cached(str(ref_audio_path), mtime) # avoid encoding the reference as much 
     
     @lru_cache(maxsize=10)
     def _encode_reference_cached(self, ref_audio_path: str, mtime: float):
+        ref_audio_path = Path(ref_audio_path)
+        ref_audio_encoded_path = ref_audio_path.with_suffix(".pt")
+
         wav, _ = librosa.load(ref_audio_path, sr=16000, mono=True)
         wav_tensor = torch.from_numpy(wav).float().unsqueeze(0).unsqueeze(0)  # [1, 1, T]
         with torch.no_grad():
-            ref_codes = self.codec.encode_code(audio_or_path=wav_tensor).squeeze(0).squeeze(0)
-        return ref_codes
+            ref_codes = self.encoder.encode_code(audio_or_path=wav_tensor).squeeze(0).squeeze(0)
+        torch.save(ref_codes, ref_audio_encoded_path)
 
     def _decode(self, codes: str):
 
@@ -232,17 +219,17 @@ class NeuTTSAir:
         if len(speech_ids) > 0:
 
             # Onnx decode
-            if self._is_onnx_codec:
+            if self._is_onnx_decoder:
                 codes = np.array(speech_ids, dtype=np.int32)[np.newaxis, np.newaxis, :]
-                recon = self.codec.decode_code(codes)
+                recon = self.decoder.decode_code(codes)
 
             # Torch decode
             else:
                 with torch.no_grad():
                     codes = torch.tensor(speech_ids, dtype=torch.long)[None, None, :].to(
-                        self.codec.device
+                        self.decoder.device
                     )
-                    recon = self.codec.decode_code(codes).cpu().numpy()
+                    recon = self.decoder.decode_code(codes).cpu().numpy()
 
             return recon[0, 0, :]
         else:
@@ -425,7 +412,8 @@ async def lifespan(app: FastAPI):
     app.state.llm.model = NeuTTSAir(
         backbone_repo='./models/llm',
         backbone_device="cpu",
-        codec_repo="./models/codec/pytorch_model.bin",
+        encoder_repo="neuphonic/neucodec",
+        decoder_repo="neuphonic/neucodec-onnx-decoder",
         codec_device="cpu"
     )
 
@@ -447,7 +435,9 @@ def generate(request: LLMRequest):
     model = app.state.llm.model
 
     logging.info("Encoding reference audio...")
-    ref_codes = model.encode_reference(request.ref_audio_path)
+    model.encode_reference(request.ref_audio_path)
+    ref_codes_path = Path(request.ref_audio_path).with_suffix('.pt')
+    ref_codes = torch.load(ref_codes_path)
 
     logging.info("Generating audio...")
     wav = model.infer(request.text, ref_codes, request.ref_text)
