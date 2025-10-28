@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install llama-cpp-python onnxruntime
 RUN pip install uvicorn FastAPI
 RUN hf download facebook/w2v-bert-2.0
+# RUN hf download neuphonic/neucodec
+# RUN hf download neuphonic/neucodec-onnx-decoder
 
 COPY models/ ./models/
 COPY neuttsair/ ./neuttsair/
