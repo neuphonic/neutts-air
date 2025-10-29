@@ -58,11 +58,11 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    sudo apt install espeak
 
    # Windows install
-       # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
+   # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
    choco install espeak-ng
-      # via wingit
+   # via wingit
    winget install -e --id eSpeak-NG.eSpeak-NG
-      # via msi (need to add to path or folow the "Windows users who installed via msi" below)
+   # via msi (need to add to path or folow the "Windows users who installed via msi" below)
    # find the msi at https://github.com/espeak-ng/espeak-ng/releases
    ```
 
