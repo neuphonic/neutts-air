@@ -1,3 +1,9 @@
+"""
+uv run examples/basic_example.py \
+    --input_text "Hello world! how are you?" \
+    --ref_audio ./samples/dave.wav \
+    --ref_text ./samples/dave.txt
+"""
 import os
 import soundfile as sf
 from neuttsair.neutts import NeuTTSAir
