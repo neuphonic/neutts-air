@@ -1,4 +1,5 @@
 """
+uv pip install onnxruntime
 uv run examples/onnx_example.py \
     --input_text "Hello world! how are you?" \
     --ref_codes ./samples/dave.pt \
