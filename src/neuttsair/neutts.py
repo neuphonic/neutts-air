@@ -7,9 +7,13 @@ import re
 import perth
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
+from phonemizer.backend.espeak.wrapper import EspeakWrapper
+import espeakng_loader
 from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
 from threading import Thread
 
+EspeakWrapper.set_library(espeakng_loader.get_library_path())
+EspeakWrapper.set_data_path(espeakng_loader.get_data_path())
 
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
     # original impl --> https://github.com/facebookresearch/encodec/blob/main/encodec/utils.py
