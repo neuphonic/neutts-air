@@ -12,9 +12,8 @@ def main(input_text, ref_codes_path, ref_text, backbone, output_path="output.wav
     # Initialize NeuTTSAir with the desired model and codec
     tts = NeuTTSAir(
         backbone_repo=backbone,
-        backbone_device="cpu",
         codec_repo="neuphonic/neucodec-onnx-decoder",
-        codec_device="cpu"
+        codec_device="auto"
     )
 
     # Check if ref_text is a path if it is read it if not just return string

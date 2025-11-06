@@ -4,6 +4,7 @@ import librosa
 import numpy as np
 import torch
 import re
+import warnings
 import perth
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
@@ -43,14 +44,14 @@ class NeuTTSAir:
     def __init__(
         self,
         backbone_repo="neuphonic/neutts-air",
-        backbone_device="cpu",
+        backbone_device="auto",
         codec_repo="neuphonic/neucodec",
-        codec_device="cpu",
+        codec_device="auto",
     ):
 
         # Consts
         self.sample_rate = 24_000
-        self.max_context = 2048
+        self.max_context = 32768
         self.hop_length = 480
         self.streaming_overlap_frames = 1
         self.streaming_frames_per_chunk = 25
@@ -71,12 +72,89 @@ class NeuTTSAir:
             language="en-us", preserve_punctuation=True, with_stress=True
         )
 
-        self._load_backbone(backbone_repo, backbone_device)
+        resolved_backbone_device = self._select_backbone_device(backbone_repo, backbone_device)
+        self.backbone_device = resolved_backbone_device
+        self._load_backbone(backbone_repo, resolved_backbone_device)
 
-        self._load_codec(codec_repo, codec_device)
+        self._requested_codec_device = codec_device or "auto"
+        self.codec_device = None
+        self._load_codec(codec_repo, self._requested_codec_device)
 
         # Load watermarker
         self.watermarker = perth.PerthImplicitWatermarker()
+
+    @staticmethod
+    def _is_mps_available() -> bool:
+        return bool(getattr(torch.backends, "mps", None)) and torch.backends.mps.is_available()
+
+    @classmethod
+    def _select_torch_device(cls, requested: str | None) -> str:
+        if requested is None:
+            requested_str = "auto"
+        else:
+            requested_str = str(requested)
+
+        normalized = requested_str.lower()
+
+        if normalized in {"auto", "default"}:
+            if torch.cuda.is_available():
+                return "cuda"
+            if cls._is_mps_available():
+                return "mps"
+            return "cpu"
+
+        if normalized == "gpu":
+            requested_str = "cuda"
+            normalized = "cuda"
+
+        if normalized.startswith("cuda") and not torch.cuda.is_available():
+            warnings.warn(
+                "CUDA requested but not available; falling back to CPU.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return "cpu"
+
+        if normalized == "mps" and not cls._is_mps_available():
+            warnings.warn(
+                "MPS requested but not available; falling back to CPU.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+            return "cpu"
+
+        return requested_str
+
+    @classmethod
+    def _select_backbone_device(cls, backbone_repo: str, requested: str | None) -> str:
+        requested = requested or "auto"
+        normalized = str(requested).lower()
+
+        if backbone_repo.endswith("gguf"):
+            if normalized in {"auto", "gpu", "cuda"}:
+                # Prefer CUDA when available, otherwise prefer Apple MPS on macOS
+                if torch.cuda.is_available():
+                    return "gpu"
+                if cls._is_mps_available():
+                    # Some llama.cpp builds for macOS support Metal; prefer using
+                    # an 'mps' signal so downstream loading logic can enable
+                    # appropriate offload behaviour.
+                    return "mps"
+                warnings.warn(
+                    "GPU-backed GGUF requested but no supported GPU provider was detected; falling back to CPU.",
+                    RuntimeWarning,
+                    stacklevel=3,
+                )
+                return "cpu"
+            if normalized == "cpu":
+                return "cpu"
+            raise ValueError(
+                "Unsupported backbone_device for GGUF backbones. "
+                "Expected one of {'auto', 'cpu', 'gpu', 'cuda'}."
+            )
+
+        resolved = cls._select_torch_device(requested)
+        return resolved
 
     def _load_backbone(self, backbone_repo, backbone_device):
         print(f"Loading backbone from: {backbone_repo} on {backbone_device} ...")
@@ -97,7 +175,13 @@ class NeuTTSAir:
                 repo_id=backbone_repo,
                 filename="*.gguf",
                 verbose=False,
-                n_gpu_layers=-1 if backbone_device == "gpu" else 0,
+                # For GGUF/llama-cpp we set `n_gpu_layers` to -1 to enable
+                # GPU-backed layers when the selected device is a GPU. We
+                # also accept `mps` for macOS builds that provide Metal
+                # acceleration; treat `mps` equivalently to `gpu` for the
+                # purposes of n_gpu_layers but avoid enabling CUDA-specific
+                # flags like flash_attn.
+                n_gpu_layers=-1 if backbone_device in {"gpu", "mps"} else 0,
                 n_ctx=self.max_context,
                 mlock=True,
                 flash_attn=True if backbone_device == "gpu" else False,
@@ -111,20 +195,22 @@ class NeuTTSAir:
             )
 
     def _load_codec(self, codec_repo, codec_device):
-
-        print(f"Loading codec from: {codec_repo} on {codec_device} ...")
         match codec_repo:
             case "neuphonic/neucodec":
+                resolved_device = self._select_torch_device(codec_device)
+                print(f"Loading codec from: {codec_repo} on {resolved_device} ...")
                 self.codec = NeuCodec.from_pretrained(codec_repo)
-                self.codec.eval().to(codec_device)
+                self.codec.eval().to(resolved_device)
+                self.codec_device = resolved_device
             case "neuphonic/distill-neucodec":
+                resolved_device = self._select_torch_device(codec_device)
+                print(f"Loading codec from: {codec_repo} on {resolved_device} ...")
                 self.codec = DistillNeuCodec.from_pretrained(codec_repo)
-                self.codec.eval().to(codec_device)
+                self.codec.eval().to(resolved_device)
+                self.codec_device = resolved_device
             case "neuphonic/neucodec-onnx-decoder":
-
-                if codec_device != "cpu":
-                    raise ValueError("Onnx decoder only currently runs on CPU.")
-
+                normalized_device = codec_device or "auto"
+                print(f"Loading codec from: {codec_repo} on {normalized_device} ...")
                 try:
                     from neucodec import NeuCodecOnnxDecoder
                 except ImportError as e:
@@ -136,12 +222,163 @@ class NeuTTSAir:
                 self.codec = NeuCodecOnnxDecoder.from_pretrained(codec_repo)
                 self._is_onnx_codec = True
 
+                self._configure_onnx_codec_session(codec_device)
+                self.codec_device = normalized_device
+
             case _:
                 raise ValueError(
                     "Invalid codec repo! Must be one of:"
                     " 'neuphonic/neucodec', 'neuphonic/distill-neucodec',"
                     " 'neuphonic/neucodec-onnx-decoder'."
                 )
+
+    def _configure_onnx_codec_session(self, codec_device: str):
+        """Configure ONNX Runtime providers based on the requested device."""
+
+        normalized_device = (codec_device or "cpu").lower()
+
+        # Map legacy/alias device names
+        if normalized_device in {"onnx", "auto"}:
+            normalized_device = "auto"
+        elif normalized_device in {"gpu"}:
+            normalized_device = "cuda"
+
+        device_id: str | None = None
+        if ":" in normalized_device:
+            base_device, device_id = normalized_device.split(":", 1)
+            normalized_device = base_device
+
+        try:
+            import onnxruntime as ort
+        except ImportError as e:
+            if normalized_device not in {"cpu", "auto"}:
+                raise ImportError(
+                    "onnxruntime with the desired execution provider is not installed. "
+                    "Install `onnxruntime-gpu` for CUDA or `onnxruntime-directml` for DirectML."
+                ) from e
+            # CPU fallback when onnxruntime-gpu isn't available
+            warnings.warn(
+                "onnxruntime-gpu not installed; falling back to CPUExecutionProvider.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return
+
+        available = ort.get_available_providers()
+
+        provider_priority: list[str] = []
+        provider_options: list[dict[str, str]] = []
+
+        def add_provider(provider: str, options: dict[str, str] | None = None):
+            provider_priority.append(provider)
+            provider_options.append(options or {})
+
+        gpu_providers = [
+            "CUDAExecutionProvider",
+            "ROCMExecutionProvider",
+            "DmlExecutionProvider",
+            "MetalExecutionProvider",
+            "CoreMLExecutionProvider",
+        ]
+
+        if normalized_device == "cpu":
+            add_provider("CPUExecutionProvider")
+        elif normalized_device == "cuda":
+            provider_name = "CUDAExecutionProvider"
+            if provider_name in available:
+                options = {"device_id": device_id} if device_id is not None else None
+                add_provider(provider_name, options)
+                add_provider("CPUExecutionProvider")
+            else:
+                warnings.warn(
+                    "CUDAExecutionProvider unavailable; falling back to CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                add_provider("CPUExecutionProvider")
+        elif normalized_device in {"directml", "dml"}:
+            provider_name = "DmlExecutionProvider"
+            if provider_name in available:
+                add_provider(provider_name)
+                add_provider("CPUExecutionProvider")
+            else:
+                warnings.warn(
+                    "DmlExecutionProvider unavailable; falling back to CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                add_provider("CPUExecutionProvider")
+        elif normalized_device in {"metal"}:
+            provider_name = "MetalExecutionProvider"
+            if provider_name in available:
+                add_provider(provider_name)
+                add_provider("CPUExecutionProvider")
+            else:
+                warnings.warn(
+                    "MetalExecutionProvider unavailable; falling back to CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                add_provider("CPUExecutionProvider")
+        elif normalized_device in {"coreml"}:
+            provider_name = "CoreMLExecutionProvider"
+            if provider_name in available:
+                add_provider(provider_name)
+                add_provider("CPUExecutionProvider")
+            else:
+                warnings.warn(
+                    "CoreMLExecutionProvider unavailable; falling back to CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                add_provider("CPUExecutionProvider")
+        elif normalized_device == "rocm":
+            provider_name = "ROCMExecutionProvider"
+            if provider_name in available:
+                add_provider(provider_name)
+                add_provider("CPUExecutionProvider")
+            else:
+                warnings.warn(
+                    "ROCMExecutionProvider unavailable; falling back to CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                add_provider("CPUExecutionProvider")
+        elif normalized_device == "auto":
+            for provider_name in gpu_providers:
+                if provider_name in available:
+                    add_provider(provider_name)
+                    break
+            if not provider_priority:
+                warnings.warn(
+                    "No GPU execution providers available; using CPUExecutionProvider.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            add_provider("CPUExecutionProvider")
+        else:
+            raise ValueError(
+                "Unsupported codec_device for ONNX decoder. "
+                "Expected one of {'cpu', 'auto', 'cuda', 'cuda:<id>', 'gpu', 'directml', 'dml', 'rocm', 'onnx'}."
+            )
+
+        # Filter out providers that truly aren't available (ignoring CPU which always works)
+        filtered_priority = []
+        filtered_options = []
+        for provider_name, options in zip(provider_priority, provider_options, strict=False):
+            if provider_name == "CPUExecutionProvider" or provider_name in available:
+                filtered_priority.append(provider_name)
+                filtered_options.append(options)
+
+        if not filtered_priority:
+            raise RuntimeError("No valid ONNX Runtime providers available to initialize the codec.")
+
+        try:
+            self.codec.session.set_providers(filtered_priority, filtered_options)
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                f"Failed to configure ONNX Runtime providers: {filtered_priority}."
+            ) from exc
 
     def infer(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> np.ndarray:
         """
