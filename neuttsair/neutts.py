@@ -4,6 +4,7 @@ import librosa
 import numpy as np
 import torch
 import re
+import os
 import perth
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
@@ -93,15 +94,28 @@ class NeuTTSAir:
                     "    pip install llama-cpp-python"
                 ) from e
 
-            self.backbone = Llama.from_pretrained(
-                repo_id=backbone_repo,
-                filename="*.gguf",
-                verbose=False,
-                n_gpu_layers=-1 if backbone_device == "gpu" else 0,
-                n_ctx=self.max_context,
-                mlock=True,
-                flash_attn=True if backbone_device == "gpu" else False,
-            )
+            # If backbone_repo is a local file path, load it directly with llama.cpp
+            if os.path.isfile(backbone_repo):
+                self.backbone = Llama(
+                    model_path=backbone_repo,
+                    verbose=False,
+                    n_gpu_layers=-1 if backbone_device == "gpu" else 0,
+                    n_ctx=self.max_context,
+                    mlock=True,
+                    flash_attn=True if backbone_device == "gpu" else False,
+                )
+            else:
+                # Fallback: treat it as a HF repo id (keeps original behavior if ever needed)
+                self.backbone = Llama.from_pretrained(
+                    repo_id=backbone_repo,
+                    filename="*.gguf",
+                    verbose=False,
+                    n_gpu_layers=-1 if backbone_device == "gpu" else 0,
+                    n_ctx=self.max_context,
+                    mlock=True,
+                    flash_attn=True if backbone_device == "gpu" else False,
+                )
+
             self._is_quantized_model = True
 
         else:
