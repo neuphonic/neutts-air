@@ -39,7 +39,10 @@ python -m examples.onnx_example \
 
 ### Streaming Support 
 
-To stream the model output in chunks, try out the `onnx_streaming.py` example. For streaming, only the GGUF backends are currently supported. Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
+To stream the model output in chunks, try out the `basic_streaming_example.py` for streaming with GGUF backends or `vllm_streaming_example.py` for streaming with any backend exposed over an OpenAI-compatible server.
+
+#### GGUF Streaming Example
+Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
 
 ```bash
 python -m examples.basic_streaming_example \
@@ -47,4 +50,24 @@ python -m examples.basic_streaming_example \
   --ref_codes samples/dave.pt \
   --ref_text samples/dave.txt \
   --backbone neuphonic/neutts-air-q4-gguf
+```
+
+#### vLLM Streaming Example
+Ensure you have `vllm`, `openai`, `onnxruntime` and `pyaudio` installed to run this example.
+See [vLLM docs](https://docs.vllm.ai/en/stable/) for instructions on setting up a vLLM server.
+
+First run vLLM to serve the desired backbone model:
+```bash
+vllm serve neuphonic/neutts-air
+```
+
+Then run the streaming example script:
+```bash
+python -m examples.vllm_streaming_example \
+  --input_text "My name is Dave, and um, I'm from London" \
+  --ref_codes samples/dave.pt \
+  --ref_text samples/dave.txt \
+  --backbone neuphonic/neutts-air \
+  --vllm_url http://localhost:8000/v1 \
+  --vllm_api_key empty
 ```

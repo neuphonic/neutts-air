@@ -58,7 +58,8 @@ class NeuTTSAir:
         self.streaming_lookback = 50
         self.streaming_stride_samples = self.streaming_frames_per_chunk * self.hop_length
 
-        # ggml & onnx flags
+        # openai-compatible, ggml & onnx flags
+        self._is_openai_client = False
         self._is_quantized_model = False
         self._is_onnx_codec = False
 
@@ -81,8 +82,23 @@ class NeuTTSAir:
     def _load_backbone(self, backbone_repo, backbone_device):
         print(f"Loading backbone from: {backbone_repo} on {backbone_device} ...")
 
+        # OpenAI client init
+        if backbone_device.startswith("http"):
+            try:
+                from openai import OpenAI
+            except ImportError as e:
+                raise ImportError(
+                    "Failed to import `openai`. "
+                    "Please install it with:\n"
+                    "    pip install openai"
+                ) from e
+            
+            base_url, api_key = backbone_device.split("|")
+            self.backbone = OpenAI(api_key=api_key, base_url=base_url).completions.create
+            self.model_path = backbone_repo
+            self._is_openai_client = True
         # GGUF loading
-        if backbone_repo.endswith("gguf"):
+        elif backbone_repo.endswith("gguf"):
 
             try:
                 from llama_cpp import Llama
@@ -156,8 +172,8 @@ class NeuTTSAir:
         """
 
         # Generate tokens
-        if self._is_quantized_model:
-            output_str = self._infer_ggml(ref_codes, ref_text, text)
+        if self._is_openai_client or self._is_quantized_model:
+            output_str = self._infer_openai_or_ggml(ref_codes, ref_text, text)
         else:
             prompt_ids = self._apply_chat_template(ref_codes, ref_text, text)
             output_str = self._infer_torch(prompt_ids)
@@ -180,8 +196,8 @@ class NeuTTSAir:
             np.ndarray: Generated speech waveform.
         """ 
 
-        if self._is_quantized_model:
-            return self._infer_stream_ggml(ref_codes, ref_text, text)
+        if self._is_openai_client or self._is_quantized_model:
+            return self._infer_stream_openai_or_ggml(ref_codes, ref_text, text)
 
         else:
             raise NotImplementedError("Streaming is not implemented for the torch backend!")
@@ -274,7 +290,7 @@ class NeuTTSAir:
         )
         return output_str
     
-    def _infer_ggml(self, ref_codes: list[int], ref_text: str, input_text: str) -> str:
+    def _infer_openai_or_ggml(self, ref_codes: list[int], ref_text: str, input_text: str) -> str:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
 
@@ -283,17 +299,28 @@ class NeuTTSAir:
             f"user: Convert the text to speech:<|TEXT_PROMPT_START|>{ref_text} {input_text}"
             f"<|TEXT_PROMPT_END|>\nassistant:<|SPEECH_GENERATION_START|>{codes_str}"
         )
+        if self._is_openai_client:
+            backbone_kwargs = {
+                "model": self.model_path,
+                "extra_body": {
+                    "top_k": 50,
+                },
+            }
+        else:
+            backbone_kwargs = {
+                "top_k": 50,
+            }
         output = self.backbone(
-            prompt,
+            prompt=prompt,
             max_tokens=self.max_context,
             temperature=1.0,
-            top_k=50,
             stop=["<|SPEECH_GENERATION_END|>"],
+            **backbone_kwargs,
         )
-        output_str = output["choices"][0]["text"]
+        output_str = output.choices[0].text if self._is_openai_client else output["choices"][0]["text"]
         return output_str
 
-    def _infer_stream_ggml(self, ref_codes: torch.Tensor, ref_text: str, input_text: str) -> Generator[np.ndarray, None, None]:
+    def _infer_stream_openai_or_ggml(self, ref_codes: torch.Tensor, ref_text: str, input_text: str) -> Generator[np.ndarray, None, None]:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
 
@@ -302,6 +329,17 @@ class NeuTTSAir:
             f"user: Convert the text to speech:<|TEXT_PROMPT_START|>{ref_text} {input_text}"
             f"<|TEXT_PROMPT_END|>\nassistant:<|SPEECH_GENERATION_START|>{codes_str}"
         )
+        if self._is_openai_client:
+            backbone_kwargs = {
+                "model": self.model_path,
+                "extra_body": {
+                    "top_k": 50,
+                },
+            }
+        else:
+            backbone_kwargs = {
+                "top_k": 50,
+            }
 
         audio_cache: list[np.ndarray] = []
         token_cache: list[str] = [f"<|speech_{idx}|>" for idx in ref_codes]
@@ -309,14 +347,14 @@ class NeuTTSAir:
         n_decoded_tokens: int = len(ref_codes)
 
         for item in self.backbone(
-            prompt,
+            prompt=prompt,
             max_tokens=self.max_context,
             temperature=1.0,
-            top_k=50,
             stop=["<|SPEECH_GENERATION_END|>"],
-            stream=True
+            stream=True,
+            **backbone_kwargs,
         ):
-            output_str = item["choices"][0]["text"]
+            output_str = item.choices[0].text if self._is_openai_client else item["choices"][0]["text"]
             token_cache.append(output_str)
 
             if len(token_cache[n_decoded_tokens:]) >= self.streaming_frames_per_chunk + self.streaming_lookforward:
