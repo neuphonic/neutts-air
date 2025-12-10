@@ -4,11 +4,42 @@ import librosa
 import numpy as np
 import torch
 import re
-import perth
+import platform
+import glob
+import warnings
+
 from neucodec import NeuCodec, DistillNeuCodec
 from phonemizer.backend import EspeakBackend
 from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
 from threading import Thread
+
+
+def _configure_espeak_library():
+    """Auto-detect and configure espeak library on macOS."""
+    if platform.system() != "Darwin":
+        return  # Only needed on macOS
+
+    # Common Homebrew installation paths
+    search_paths = [
+        "/opt/homebrew/Cellar/espeak/*/lib/libespeak.*.dylib",  # Apple Silicon
+        "/usr/local/Cellar/espeak/*/lib/libespeak.*.dylib",     # Intel
+    ]
+
+    for pattern in search_paths:
+        matches = glob.glob(pattern)
+        if matches:
+            try:
+                from phonemizer.backend.espeak.wrapper import EspeakWrapper
+
+                EspeakWrapper.set_library(matches[0])
+                return
+            except Exception:
+                # If this fails, phonemizer will try its default detection
+                pass
+
+
+# Call before using phonemizer
+_configure_espeak_library()
 
 
 def _linear_overlap_add(frames: list[np.ndarray], stride: int) -> np.ndarray:
@@ -75,8 +106,18 @@ class NeuTTSAir:
 
         self._load_codec(codec_repo, codec_device)
 
-        # Load watermarker
-        self.watermarker = perth.PerthImplicitWatermarker()
+        # Load watermarker (optional)
+        try:
+            import perth
+
+            self.watermarker = perth.PerthImplicitWatermarker()
+        except (ImportError, AttributeError) as e:
+            warnings.warn(
+                f"Perth watermarking unavailable: {e}. "
+                "Audio will not be watermarked. "
+                "Install with: pip install perth>=0.2.0"
+            )
+            self.watermarker = None
 
     def _load_backbone(self, backbone_repo, backbone_device):
         print(f"Loading backbone from: {backbone_repo} on {backbone_device} ...")
@@ -164,10 +205,14 @@ class NeuTTSAir:
 
         # Decode
         wav = self._decode(output_str)
-        watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=24_000)
+        watermarked_wav = (
+            wav
+            if self.watermarker is None
+            else self.watermarker.apply_watermark(wav, sample_rate=24_000)
+        )
 
         return watermarked_wav
-    
+
     def infer_stream(self, text: str, ref_codes: np.ndarray | torch.Tensor, ref_text: str) -> Generator[np.ndarray, None, None]:
         """
         Perform streaming inference to generate speech from text using the TTS model and reference audio.
@@ -178,7 +223,7 @@ class NeuTTSAir:
             ref_text (str): Reference text for reference audio. Defaults to None.
         Yields:
             np.ndarray: Generated speech waveform.
-        """ 
+        """
 
         if self._is_quantized_model:
             return self._infer_stream_ggml(ref_codes, ref_text, text)
@@ -273,7 +318,7 @@ class NeuTTSAir:
             output_tokens[0, input_length:].cpu().numpy().tolist(), add_special_tokens=False
         )
         return output_str
-    
+
     def _infer_ggml(self, ref_codes: list[int], ref_text: str, input_text: str) -> str:
         ref_text = self._to_phones(ref_text)
         input_text = self._to_phones(input_text)
@@ -343,7 +388,11 @@ class NeuTTSAir:
                 )
                 curr_codes = token_cache[tokens_start:tokens_end]
                 recon = self._decode("".join(curr_codes))
-                recon = self.watermarker.apply_watermark(recon, sample_rate=24_000)
+                recon = (
+                    recon
+                    if self.watermarker is None
+                    else self.watermarker.apply_watermark(recon, sample_rate=24_000)
+                )
                 recon = recon[sample_start:sample_end]
                 audio_cache.append(recon)
 
@@ -364,18 +413,22 @@ class NeuTTSAir:
         if len(token_cache) > n_decoded_tokens:
             tokens_start = max(
                 len(token_cache)
-                - (self.streaming_lookback + self.streaming_overlap_frames + remaining_tokens), 
+                - (self.streaming_lookback + self.streaming_overlap_frames + remaining_tokens),
                 0
             )
             sample_start = (
-                len(token_cache) 
-                - tokens_start 
-                - remaining_tokens 
+                len(token_cache)
+                - tokens_start
+                - remaining_tokens
                 - self.streaming_overlap_frames
             ) * self.hop_length
             curr_codes = token_cache[tokens_start:]
             recon = self._decode("".join(curr_codes))
-            recon = self.watermarker.apply_watermark(recon, sample_rate=24_000)
+            recon = (
+                recon
+                if self.watermarker is None
+                else self.watermarker.apply_watermark(recon, sample_rate=24_000)
+            )
             recon = recon[sample_start:]
             audio_cache.append(recon)
 
