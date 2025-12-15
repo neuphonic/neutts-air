@@ -140,7 +140,6 @@ class NeuTTSAir:
 
             self.codec = NeuCodecOnnxDecoder(codec_repo)
             self._is_onnx_codec = True
-            return
 
         # 2) Original HF-based behavior (use only if you really want remote download)
         match codec_repo:
