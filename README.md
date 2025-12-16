@@ -31,6 +31,7 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 - **Responsibility**: Watermarked outputs
 - **Inference Speed**: Real-time generation on mid-range devices
 - **Power Consumption**: Optimised for mobile and embedded devices
+- **Compatibility**: Supports streaming inference with [llama.cpp](https://github.com/ggml-org/llama.cpp), [vLLM](https://docs.vllm.ai/en/stable/), or any other OpenAI-compatible server
 
 ## Get Started
 
@@ -159,6 +160,8 @@ python -m examples.basic_streaming_example \
 ```
 
 Again, a particular model repo can be specified with the `--backbone` argument - note that for streaming the model must be in GGUF format.
+
+Alternatively, streaming can be done with any backbone served over an OpenAI-compatible server using the `vllm_streaming_example.py` script. See the [examples README](examples/README.md#streaming-support) for more details.
 
 ## Preparing References for Cloning
 
