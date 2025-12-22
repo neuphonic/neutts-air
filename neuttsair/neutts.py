@@ -134,15 +134,28 @@ class NeuTTSAir:
                     "    pip install llama-cpp-python"
                 ) from e
 
-            self.backbone = Llama.from_pretrained(
-                repo_id=backbone_repo,
-                filename="*.gguf",
-                verbose=False,
-                n_gpu_layers=-1 if backbone_device == "gpu" else 0,
-                n_ctx=self.max_context,
-                mlock=True,
-                flash_attn=True if backbone_device == "gpu" else False,
-            )
+            # If backbone_repo is a local file path, load it directly with llama.cpp
+            if os.path.isfile(backbone_repo):
+                self.backbone = Llama(
+                    model_path=backbone_repo,
+                    verbose=False,
+                    n_gpu_layers=-1 if backbone_device == "gpu" else 0,
+                    n_ctx=self.max_context,
+                    mlock=True,
+                    flash_attn=True if backbone_device == "gpu" else False,
+                )
+            else:
+                # Fallback: treat it as a HF repo id (keeps original behavior if ever needed)
+                self.backbone = Llama.from_pretrained(
+                    repo_id=backbone_repo,
+                    filename="*.gguf",
+                    verbose=False,
+                    n_gpu_layers=-1 if backbone_device == "gpu" else 0,
+                    n_ctx=self.max_context,
+                    mlock=True,
+                    flash_attn=True if backbone_device == "gpu" else False,
+                )
+
             self._is_quantized_model = True
 
         else:
@@ -154,6 +167,21 @@ class NeuTTSAir:
     def _load_codec(self, codec_repo, codec_device):
 
         print(f"Loading codec from: {codec_repo} on {codec_device} ...")
+
+        # 1) Local ONNX path (offline, recommended for embedded)
+        if codec_repo.endswith(".onnx") and os.path.isfile(codec_repo):
+            try:
+                from neucodec import NeuCodecOnnxDecoder
+            except ImportError as e:
+                raise ImportError(
+                    "Failed to import NeuCodecOnnxDecoder. "
+                    "Make sure `neucodec` and `onnxruntime` are installed."
+                ) from e
+
+            self.codec = NeuCodecOnnxDecoder(codec_repo)
+            self._is_onnx_codec = True
+
+        # 2) Original HF-based behavior (use only if you really want remote download)
         match codec_repo:
             case "neuphonic/neucodec":
                 self.codec = NeuCodec.from_pretrained(codec_repo)
