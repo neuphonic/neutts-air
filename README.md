@@ -119,6 +119,15 @@ python -m examples.basic_example \
   --ref_text samples/dave.txt
 ```
 
+Or, run the long text example:
+
+```bash
+python -m examples.long_text_example \
+  --input_text samples/input.txt \
+  --ref_audio samples/dave.wav \
+  --ref_text samples/dave.txt
+```
+
 To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air huggingface collection](https://huggingface.co/collections/neuphonic/neutts-air-68cc14b7033b4c56197ef350).
 
 Several examples are available, including a Jupyter notebook in the `examples` folder.
