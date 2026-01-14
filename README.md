@@ -117,11 +117,11 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
    The requirements file includes the dependencies needed to run the model with PyTorch.
    When using an ONNX decoder or a GGML model, some dependencies (such as PyTorch) are no longer required.
 
-   The inference is compatible and tested on `python>=3.11`.
-
    ```bash
    pip install -r requirements.txt
    ```
+   > [!CAUTION]
+   > The inference is compatible and tested on `python">=3.11, <=3.13"`. This is restricted due to pytorch compatibility. [PyTorch Compatibility Matrix](https://github.com/pytorch/pytorch/blob/main/RELEASE.md#release-compatibility-matrix)
 
 4. **(Optional) Install Llama-cpp-python to use the `GGUF` models.**
 
