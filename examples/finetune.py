@@ -8,7 +8,13 @@ import phonemizer
 from fire import Fire
 from omegaconf import OmegaConf
 from functools import partial
-from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, default_data_collator
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    Trainer,
+    TrainingArguments,
+    default_data_collator,
+)
 from loguru import logger as LOGGER
 from datasets import load_dataset
 
@@ -26,7 +32,7 @@ def data_filter(sample):
     if len(text) == 0:
         return False
 
-    if re.search(r'\d', text):
+    if re.search(r"\d", text):
         return False
 
     if re.search(ACRONYM, text) or re.search(ACRONYM_NO_PERIOD, text):
@@ -35,7 +41,7 @@ def data_filter(sample):
     if text[-1] not in ".,?!":
         return False
 
-    if '£' in text or '$' in text:
+    if "£" in text or "$" in text:
         return False
 
     return True
@@ -44,7 +50,7 @@ def data_filter(sample):
 def preprocess_sample(sample, tokenizer, max_len, g2p):
 
     # get special tokens
-    speech_gen_start = tokenizer.convert_tokens_to_ids('<|SPEECH_GENERATION_START|>')
+    speech_gen_start = tokenizer.convert_tokens_to_ids("<|SPEECH_GENERATION_START|>")
     ignore_index = -100  # this is from LLaMA
 
     # unpack sample
@@ -60,12 +66,12 @@ def preprocess_sample(sample, tokenizer, max_len, g2p):
         return None
 
     phones = phones[0].split()
-    phones = ' '.join(phones)
+    phones = " ".join(phones)
 
     codes_str = "".join([f"<|speech_{i}|>" for i in vq_codes])
 
     # get chat format
-    chat = f"""user: Convert the text to speech:<|TEXT_PROMPT_START|>{phones}<|TEXT_PROMPT_END|>\nassistant:<|SPEECH_GENERATION_START|>{codes_str}<|SPEECH_GENERATION_END|>"""
+    chat = f"""user: Convert the text to speech:<|TEXT_PROMPT_START|>{phones}<|TEXT_PROMPT_END|>\nassistant:<|SPEECH_GENERATION_START|>{codes_str}<|SPEECH_GENERATION_END|>"""  # noqa
     ids = tokenizer.encode(chat)
 
     # pad to make seq len
@@ -109,11 +115,11 @@ def main(config_fpath: str):
     model = AutoModelForCausalLM.from_pretrained(restore_from, torch_dtype="auto")
 
     g2p = phonemizer.backend.EspeakBackend(
-        language='en-us',
+        language="en-us",
         preserve_punctuation=True,
         with_stress=True,
         words_mismatch="ignore",
-        language_switch="remove-flags"
+        language_switch="remove-flags",
     )
     partial_preprocess = partial(
         preprocess_sample,
@@ -126,7 +132,9 @@ def main(config_fpath: str):
         "neuphonic/emilia-yodas-english-neucodec",
         split="train[:2000]",
     )
-    emilia_dataset = emilia_dataset.filter(data_filter).map(partial_preprocess, remove_columns=["text", "codes"])
+    emilia_dataset = emilia_dataset.filter(data_filter).map(
+        partial_preprocess, remove_columns=["text", "codes"]
+    )
 
     training_args = TrainingArguments(
         output_dir=checkpoints_dir,
