@@ -1,6 +1,6 @@
 import os
 import soundfile as sf
-from neuttsair.neutts import NeuTTSAir
+from neutts import NeuTTS
 
 
 def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav"):
@@ -8,12 +8,12 @@ def main(input_text, ref_audio_path, ref_text, backbone, output_path="output.wav
         print("No reference audio or text provided.")
         return None
 
-    # Initialize NeuTTSAir with the desired model and codec
-    tts = NeuTTSAir(
+    # Initialize NeuTTS with the desired model and codec
+    tts = NeuTTS(
         backbone_repo=backbone,
         backbone_device="cpu",
         codec_repo="neuphonic/neucodec",
-        codec_device="cpu"
+        codec_device="cpu",
     )
 
     # Check if ref_text is a path if it is read it if not just return string
@@ -35,36 +35,27 @@ if __name__ == "__main__":
     # get arguments from command line
     import argparse
 
-    parser = argparse.ArgumentParser(description="NeuTTSAir Example")
+    parser = argparse.ArgumentParser(description="NeuTTS Example")
     parser.add_argument(
-        "--input_text", 
-        type=str, 
-        required=True, 
-        help="Input text to be converted to speech"
+        "--input_text", type=str, required=True, help="Input text to be converted to speech"
     )
     parser.add_argument(
-        "--ref_audio", 
-        type=str, 
-        default="./samples/dave.wav", 
-        help="Path to reference audio file"
+        "--ref_audio", type=str, default="./samples/dave.wav", help="Path to reference audio file"
     )
     parser.add_argument(
         "--ref_text",
         type=str,
-        default="./samples/dave.txt", 
+        default="./samples/dave.txt",
         help="Reference text corresponding to the reference audio",
     )
     parser.add_argument(
-        "--output_path", 
-        type=str, 
-        default="output.wav", 
-        help="Path to save the output audio"
+        "--output_path", type=str, default="output.wav", help="Path to save the output audio"
     )
     parser.add_argument(
-        "--backbone", 
-        type=str, 
-        default="neuphonic/neutts-air", 
-        help="Huggingface repo containing the backbone checkpoint"
+        "--backbone",
+        type=str,
+        default="neuphonic/neutts-air",
+        help="Huggingface repo containing the backbone checkpoint",
     )
     args = parser.parse_args()
     main(

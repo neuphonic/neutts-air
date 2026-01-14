@@ -19,4 +19,4 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        args: [--max-line-length=100]
+        args: ["--ignore=E203,W503", --max-line-length=100]

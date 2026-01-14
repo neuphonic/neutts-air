@@ -1,4 +1,5 @@
-pytest
-onnxruntime
-pyaudio
 llama-cpp-python
+onnxruntime
+pre-commit
+pyaudio
+pytest
