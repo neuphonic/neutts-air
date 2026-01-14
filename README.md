@@ -86,10 +86,10 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
 
    ```bash
    # Mac OS
-   brew install espeak
+   brew install espeak-ng
 
    # Ubuntu/Debian
-   sudo apt install espeak
+   sudo apt install espeak-ng
 
    # Windows install
    # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
@@ -98,14 +98,6 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
    winget install -e --id eSpeak-NG.eSpeak-NG
    # via msi (need to add to path or folow the "Windows users who installed via msi" below)
    # find the msi at https://github.com/espeak-ng/espeak-ng/releases
-   ```
-
-   Mac users may need to put the following lines at the top of the neutts.py file.
-
-   ```python
-   from phonemizer.backend.espeak.wrapper import EspeakWrapper
-   _ESPEAK_LIBRARY = '/opt/homebrew/Cellar/espeak/1.48.04_1/lib/libespeak.1.1.48.dylib'  #use the Path to the library.
-   EspeakWrapper.set_library(_ESPEAK_LIBRARY)
    ```
 
    Windows users who installed via msi / do not have their install on path need to run the following (see https://github.com/bootphon/phonemizer/issues/163)
@@ -153,7 +145,7 @@ python -m examples.basic_example \
   --ref_text samples/dave.txt
 ```
 
-To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air huggingface collection](https://huggingface.co/collections/neuphonic/neutts-air-68cc14b7033b4c56197ef350).
+To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air](https://huggingface.co/collections/neuphonic/neutts-air-68cc14b7033b4c56197ef350) and [NeuTTS-Nano](https://huggingface.co/collections/neuphonic/neutts-nano) and.
 
 Several examples are available, including a Jupyter notebook in the `examples` folder.
 
