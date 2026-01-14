@@ -22,6 +22,8 @@ def _configure_espeak_library():
     search_paths = [
         "/opt/homebrew/Cellar/espeak/*/lib/libespeak.*.dylib",  # Apple Silicon
         "/usr/local/Cellar/espeak/*/lib/libespeak.*.dylib",  # Intel
+        "/opt/homebrew/Cellar/espeak-ng/*/lib/libespeak-ng.*.dylib",  # Apple Silicon
+        "/usr/local/Cellar/espeak-ng/*/lib/libespeak-ng.*.dylib",
     ]
 
     for pattern in search_paths:
