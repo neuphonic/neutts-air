@@ -1,10 +1,12 @@
 # NeuTTS
 
 HuggingFace 🤗:
+
 - NeuTTS-Air: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf), [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
 - NeuTTS-Nano: [Model](https://huggingface.co/neuphonic/neutts-nano), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
 
-[NeuTTS-Air Demo Video](https://github.com/user-attachments/assets/020547bc-9e3e-440f-b016-ae61ca645184)
+
+[NeuTTS-Nano Demo Video](https://github.com/user-attachments/assets/629ec5b2-4818-4fa6-987a-99fcbadc56bc)
 
 _Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI_
 
@@ -62,9 +64,11 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
 | **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
 
 
-> [A]: llama-bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB, and 6 threads for each on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
+> [!NOTE]
+>  llama-bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB, and 6 threads for each on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
 
-> [B]: Please note that these benchmarks only include the Speech Language Model and do not include the Codec which is needed for a full audio generation pipeline.
+> [!NOTE]
+> Please note that these benchmarks only include the Speech Language Model and do not include the Codec which is needed for a full audio generation pipeline.
 
 ## Get Started with NeuTTS
 
