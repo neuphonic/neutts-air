@@ -24,6 +24,8 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS i
 
 ## Model Details
 
+
+
 NeuTTS models are built from small LLM backbones - lightweight yet capable language models optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
 
 - **Supported Languages**: English
@@ -34,7 +36,15 @@ NeuTTS models are built from small LLM backbones - lightweight yet capable langu
 - **Inference Speed**: Real-time generation on mid-range devices
 - **Power Consumption**: Optimised for mobile and embedded devices
 
-## Benchmarking Models
+
+|  | NeuTTSAir | NeuTTSNano |
+|---|---:|---:|
+| **# Params (Active)** | ~360m | ~120m |
+| **# Params (Emb + Active)** | ~552m | ~229m |
+| **Cloning** | Yes | Yes |
+| **License** | Apache 2.0 | NeuTTS Open License 1.0 |
+
+## Throughput Benchmarking
 
 The two models were benhcmarked using the Q4 quantisation [neutts-air-Q4-0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4-0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf).
 Benchmarks on CPU were run through llama-bench (llama.cpp) to measure prefill and decode throughput at multiple context sizes. We report CPU throughput number below using 500 prefill tokens and generating 250 tokens.
@@ -44,17 +54,13 @@ For GPU's (specifically RTX 4090), we leverage vLLM to maximise throughput. We r
 We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4 16GB, NVIDIA GeForce RTX 4090.
 
 
-|  | Air | Nano |
+|  | NeuTTSAir | NeuTTSNano |
 |---|---:|---:|
-| **Model Name** | Air | Nano |
-| **# Params (Active)** | ~360m | ~120m |
-| **# Params (Emb + Active)** | ~552m | ~229m |
-| **Cloning** | Yes | Yes |
-| **Galaxy A25 5G (CPU only)** | 20 t/s | 45 t/s|
-| **AMD Ryzen 9 HX 370 (CPU only)** | 119 t/s | 221 t/s |
-| **iMAc M4 16 GB (CPU only)** | 111 t/s | 195 t/s |
-| **RTX 4090** | 16194 t/s | 19268 t/s |
-| **License** | Apache 2.0 | NeuTTS Open License 1.0 |
+| **Galaxy A25 5G (CPU only)** | 20 tokens/s | 45 tokens/s|
+| **AMD Ryzen 9 HX 370 (CPU only)** | 119 tokens/s | 221 tokens/s |
+| **iMAc M4 16 GB (CPU only)** | 111 tokens/s | 195 tokens/s |
+| **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
+
 
 > [A]: Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB. 6 threads on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
 
