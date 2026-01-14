@@ -9,7 +9,7 @@ python -m examples.basic_example \
   --input_text "My name is Dave, and um, I'm from London" \
   --ref_audio ./samples/dave.wav \
   --ref_text ./samples/dave.txt \
-  --backbone neuphonic/neutts-air-q4-gguf
+  --backbone neuphonic/neutts-nano-q4-gguf
 ```
 
 ### Pre-encode a reference
@@ -24,7 +24,7 @@ python -m examples.encode_reference \
 
 ### Minimal Latency Example
 
-To take advantage of encoding references ahead of time, we have a compiled the codec decoder into an [onnx graph](https://huggingface.co/neuphonic/neucodec-onnx-decoder) that enables inferencing NeuTTS-Air without loading the encoder. 
+To take advantage of encoding references ahead of time, we have a compiled the codec decoder into an [onnx graph](https://huggingface.co/neuphonic/neucodec-onnx-decoder) that enables inferencing NeuTTS without loading the encoder.
 This can be useful for running the model in resource-constrained environments where the encoder may add a large amount of extra latency/memory usage.
 
 To test the decoder, make sure you have installed ```onnxruntime``` and run the following:
@@ -34,10 +34,10 @@ python -m examples.onnx_example \
   --input_text "My name is Dave, and um, I'm from London" \
   --ref_codes samples/dave.pt \
   --ref_text samples/dave.txt \
-  --backbone neuphonic/neutts-air-q4-gguf
+  --backbone neuphonic/neutts-nano-q4-gguf
 ```
 
-### Streaming Support 
+### Streaming Support
 
 To stream the model output in chunks, try out the `onnx_streaming.py` example. For streaming, only the GGUF backends are currently supported. Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
 
@@ -46,5 +46,5 @@ python -m examples.basic_streaming_example \
   --input_text "My name is Dave, and um, I'm from London" \
   --ref_codes samples/dave.pt \
   --ref_text samples/dave.txt \
-  --backbone neuphonic/neutts-air-q4-gguf
+  --backbone neuphonic/neutts-nano-q4-gguf
 ```
