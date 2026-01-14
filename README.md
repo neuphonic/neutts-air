@@ -62,9 +62,9 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
 | **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
 
 
-> [A]: Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB. 6 threads on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
+> [INFO]: Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB. 6 threads on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
 
-> [B]:Please note that these benchmarks only include the Speech Language Model and does not include the Codec which is needed for a full audio generation pipeline.
+> [!NOTE]:Please note that these benchmarks only include the Speech Language Model and does not include the Codec which is needed for a full audio generation pipeline.
 
 ## Get Started with NeuTTS
 
