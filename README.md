@@ -39,11 +39,10 @@ NeuTTS models are built from small LLM backbones - lightweight yet capable langu
 The two models were benhcmarked using the Q4 quantisation [neutts-air-Q4-0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4-0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf).
 Benchmarks on CPU were run through llama-bench (llama.cpp) to measure prefill and decode throughput at multiple context sizes. We report CPU throughput number below using 500 prefill tokens and generating 250 tokens.
 
-For GPU's (specifically RTX 4090), we leverage vLLM to maximise throughpu. We run benchmarks using the [vLLM benchmark](https://docs.vllm.ai/en/stable/cli/bench/throughput/). Similarily we included benchmarks when using 500 prefill tokens and generating 250 tokens per request.
+For GPU's (specifically RTX 4090), we leverage vLLM to maximise throughput. We run benchmarks using the [vLLM benchmark](https://docs.vllm.ai/en/stable/cli/bench/throughput/).
 
 We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4 16GB, NVIDIA GeForce RTX 4090.
 
-Please note that these benchmarks only benchmarks the Speech Language Model and does not include the Codec which is needed for a full audio generation pipeline.
 
 |  | Air | Nano |
 |---|---:|---:|
@@ -57,7 +56,9 @@ Please note that these benchmarks only benchmarks the Speech Language Model and 
 | **RTX 4090** | 16194 t/s | 19268 t/s |
 | **License** | Apache 2.0 | NeuTTS Open License 1.0 |
 
-> [A]: CPU throughput measured on an AMD Ryzen 9 HX 370 using llama-bench, reporting prefill throughput at 1K context (tokens/s). Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run)
+> [A]: Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB. 6 threads on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
+
+> [B]:Please note that these benchmarks only include the Speech Language Model and does not include the Codec which is needed for a full audio generation pipeline.
 
 ## Get Started with NeuTTS
 
