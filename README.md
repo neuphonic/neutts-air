@@ -156,7 +156,7 @@ from neutts import NeuTTS
 import soundfile as sf
 
 tts = NeuTTS(
-   backbone_repo="neuphonic/neutts-air", # or 'neutts-air-q4-gguf' with llama-cpp-python installed
+   backbone_repo="neuphonic/neutts-nano", # or 'neutts-nano-q4-gguf' with llama-cpp-python installed
    backbone_device="cpu",
    codec_repo="neuphonic/neucodec",
    codec_device="cpu"
