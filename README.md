@@ -218,3 +218,17 @@ Then:
 ```bash
 pre-commit install
 ```
+
+## Running Tests
+
+First, install the dev requirements:
+
+```
+pip install -r requirements-dev.txt
+```
+
+To run the tests:
+
+```
+pytest tests/
+```

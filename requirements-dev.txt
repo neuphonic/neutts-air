@@ -1,0 +1,4 @@
+pytest
+onnxruntime
+pyaudio
+llama-cpp-python
