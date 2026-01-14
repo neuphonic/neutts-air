@@ -6,9 +6,9 @@ To run the model with `llama-cpp-python` in GGUF format, select a GGUF backbone 
 
 ```bash
 python -m examples.basic_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_audio ./samples/dave.wav \
-  --ref_text ./samples/dave.txt \
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_audio ./samples/jo.wav \
+  --ref_text ./samples/jo.txt \
   --backbone neuphonic/neutts-nano-q4-gguf
 ```
 
@@ -18,7 +18,7 @@ Reference encoding can be done ahead of time to reduce latency whilst inferencin
 
 ```bash
 python -m examples.encode_reference \
- --ref_audio  ./samples/dave.wav \
+ --ref_audio  ./samples/jo.wav \
  --output_path encoded_reference.pt
  ```
 
@@ -31,20 +31,20 @@ To test the decoder, make sure you have installed ```onnxruntime``` and run the 
 
 ```bash
 python -m examples.onnx_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_codes samples/dave.pt \
-  --ref_text samples/dave.txt \
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_codes samples/jo.pt \
+  --ref_text samples/jo.txt \
   --backbone neuphonic/neutts-nano-q4-gguf
 ```
 
 ### Streaming Support
 
-To stream the model output in chunks, try out the `onnx_streaming.py` example. For streaming, only the GGUF backends are currently supported. Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
+To stream the model output in chunks, try out the `basic_streaming_example.py` example. For streaming, only the GGUF backends are currently supported. Ensure you have `llama-cpp-python`, `onnxruntime` and `pyaudio` installed to run this example.
 
 ```bash
 python -m examples.basic_streaming_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_codes samples/dave.pt \
-  --ref_text samples/dave.txt \
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_codes samples/jo.pt \
+  --ref_text samples/jo.txt \
   --backbone neuphonic/neutts-nano-q4-gguf
 ```

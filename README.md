@@ -1,8 +1,8 @@
 # NeuTTS
 
 HuggingFace 🤗:
-- NeuTTS-Air* [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf) [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
-- NeuTTS-Nano [Model](https://huggingface.co/neuphonic/neutts-nano), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
+- NeuTTS-Air: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf), [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
+- NeuTTS-Nano: [Model](https://huggingface.co/neuphonic/neutts-nano), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
 
 [NeuTTS-Air Demo Video](https://github.com/user-attachments/assets/020547bc-9e3e-440f-b016-ae61ca645184)
 
@@ -12,10 +12,10 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS i
 
 ## Key Features
 
-- 🗣Best-in-class realism for its size - produces natural, ultra-realistic voices that sound human
+- 🗣Best-in-class realism for their size - produce natural, ultra-realistic voices that sound human, at the sweet spot between speed, size, and quality for real-world applications
 - 📱Optimised for on-device deployment - provided in GGML format, ready to run on phones, laptops, or even Raspberry Pis
 - 👫Instant voice cloning - create your own speaker with as little as 3 seconds of audio
-- 🚄Simple LM + codec architecture built - the sweet spot between speed, size, and quality for real-world applications
+- 🚄Simple LM + codec architecture - making development and deployment simple
 
 > [!CAUTION]
 > Websites like neutts.com are popping up and they're not affliated with Neuphonic, our github or this repo.
@@ -46,8 +46,8 @@ NeuTTS models are built from small LLM backbones - lightweight yet capable langu
 
 ## Throughput Benchmarking
 
-The two models were benhcmarked using the Q4 quantisation [neutts-air-Q4-0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4-0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf).
-Benchmarks on CPU were run through llama-bench (llama.cpp) to measure prefill and decode throughput at multiple context sizes. We report CPU throughput number below using 500 prefill tokens and generating 250 tokens.
+The two models were benchmarked using the Q4 quantisations [neutts-air-Q4-0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4-0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf).
+Benchmarks on CPU were run through llama-bench (llama.cpp) to measure prefill and decode throughput at multiple context sizes.
 
 For GPU's (specifically RTX 4090), we leverage vLLM to maximise throughput. We run benchmarks using the [vLLM benchmark](https://docs.vllm.ai/en/stable/cli/bench/throughput/).
 
@@ -62,9 +62,9 @@ We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4
 | **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
 
 
-> [A]: Bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB. 6 threads on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
+> [A]: llama-bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB, and 6 threads for each on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
 
-> [B]:Please note that these benchmarks only include the Speech Language Model and does not include the Codec which is needed for a full audio generation pipeline.
+> [B]: Please note that these benchmarks only include the Speech Language Model and do not include the Codec which is needed for a full audio generation pipeline.
 
 ## Get Started with NeuTTS
 
@@ -140,12 +140,12 @@ Run the basic example script to synthesize speech:
 
 ```bash
 python -m examples.basic_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_audio samples/dave.wav \
-  --ref_text samples/dave.txt
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_audio samples/jo.wav \
+  --ref_text samples/jo.txt
 ```
 
-To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air](https://huggingface.co/collections/neuphonic/neutts-air-68cc14b7033b4c56197ef350) and [NeuTTS-Nano](https://huggingface.co/collections/neuphonic/neutts-nano) and.
+To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air](https://huggingface.co/collections/neuphonic/neutts-air) and [NeuTTS-Nano](https://huggingface.co/collections/neuphonic/neutts-nano) huggingface collections.
 
 Several examples are available, including a Jupyter notebook in the `examples` folder.
 
@@ -161,10 +161,10 @@ tts = NeuTTS(
    codec_repo="neuphonic/neucodec",
    codec_device="cpu"
 )
-input_text = "My name is Dave, and um, I'm from London."
+input_text = "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all."
 
-ref_text = "samples/dave.txt"
-ref_audio_path = "samples/dave.wav"
+ref_text = "samples/jo.txt"
+ref_audio_path = "samples/jo.wav"
 
 ref_text = open(ref_text, "r").read().strip()
 ref_codes = tts.encode_reference(ref_audio_path)
@@ -179,9 +179,9 @@ Speech can also be synthesised in _streaming mode_, where audio is generated in 
 
 ```bash
 python -m examples.basic_streaming_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_codes samples/dave.pt \
-  --ref_text samples/dave.txt
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_codes samples/jo.pt \
+  --ref_text samples/jo.txt
 ```
 
 Again, a particular model repo can be specified with the `--backbone` argument - note that for streaming the model must be in GGUF format.
