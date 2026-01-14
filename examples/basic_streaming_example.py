@@ -53,13 +53,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ref_codes",
         type=str,
-        default="./samples/dave.pt",
+        default="./samples/jo.pt",
         help="Path to pre-encoded reference audio",
     )
     parser.add_argument(
         "--ref_text",
         type=str,
-        default="./samples/dave.txt",
+        default="./samples/jo.txt",
         help="Reference text corresponding to the reference audio",
     )
     parser.add_argument(

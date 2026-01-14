@@ -1,5 +1,5 @@
 # run info
-restore_from: "neuphonic/neutts-air"
+restore_from: "neuphonic/neutts-nano"
 save_root: "/data"
 run_name: "neutts-finetune"
 
