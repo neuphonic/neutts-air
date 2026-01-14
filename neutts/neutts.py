@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Generator
 from pathlib import Path
 import librosa
@@ -9,19 +8,7 @@ import re
 import platform
 import glob
 import warnings
-
-if sys.platform == "darwin":
-    from phonemizer.backend.espeak.wrapper import EspeakWrapper
-
-    # Example path for Apple Silicon Homebrew
-    espeak_path = "/opt/homebrew/Cellar/espeak/1.48.04_1/lib/libespeak.1.1.48.dylib"
-    if os.path.exists(espeak_path):
-        _ESPEAK_LIBRARY = espeak_path
-        EspeakWrapper.set_library(_ESPEAK_LIBRARY)
-
-
 from phonemizer.backend import EspeakBackend
-
 from neucodec import NeuCodec, DistillNeuCodec
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
