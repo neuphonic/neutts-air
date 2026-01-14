@@ -1,19 +1,23 @@
-# NeuTTS Air ☁️
+# NeuTTS
 
-HuggingFace 🤗: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf) [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
+HuggingFace 🤗:
 
-[Demo Video](https://github.com/user-attachments/assets/020547bc-9e3e-440f-b016-ae61ca645184)
+- NeuTTS-Air: [Model](https://huggingface.co/neuphonic/neutts-air), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-air-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-air-q4-gguf), [Spaces](https://huggingface.co/spaces/neuphonic/neutts-air)
+- NeuTTS-Nano: [Model](https://huggingface.co/neuphonic/neutts-nano), [Q8 GGUF](https://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
+
+
+[NeuTTS-Nano Demo Video](https://github.com/user-attachments/assets/629ec5b2-4818-4fa6-987a-99fcbadc56bc)
 
 _Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI_
 
-State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS Air is the world’s first super-realistic, on-device, TTS speech language model with instant voice cloning. Built off a 0.5B LLM backbone, NeuTTS Air brings natural-sounding speech, real-time performance, built-in security and speaker cloning to your local device - unlocking a new category of embedded voice agents, assistants, toys, and compliance-safe apps.
+State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS is a collection of open source, on-device, TTS speech language models with instant voice cloning. Built off of LLM backbones, NeuTTS brings natural-sounding speech, real-time performance, built-in security and speaker cloning to your local device - unlocking a new category of embedded voice agents, assistants, toys, and compliance-safe apps.
 
 ## Key Features
 
-- 🗣Best-in-class realism for its size - produces natural, ultra-realistic voices that sound human
+- 🗣Best-in-class realism for their size - produce natural, ultra-realistic voices that sound human, at the sweet spot between speed, size, and quality for real-world applications
 - 📱Optimised for on-device deployment - provided in GGML format, ready to run on phones, laptops, or even Raspberry Pis
 - 👫Instant voice cloning - create your own speaker with as little as 3 seconds of audio
-- 🚄Simple LM + codec architecture built off a 0.5B backbone - the sweet spot between speed, size, and quality for real-world applications
+- 🚄Simple LM + codec architecture - making development and deployment simple
 
 > [!CAUTION]
 > Websites like neutts.com are popping up and they're not affliated with Neuphonic, our github or this repo.
@@ -22,7 +26,9 @@ State-of-the-art Voice AI has been locked behind web APIs for too long. NeuTTS A
 
 ## Model Details
 
-NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
+
+
+NeuTTS models are built from small LLM backbones - lightweight yet capable language models optimised for text understanding and generation - as well as a powerful combination of technologies designed for efficiency and quality:
 
 - **Supported Languages**: English
 - **Audio Codec**: [NeuCodec](https://huggingface.co/neuphonic/neucodec) - our 50hz neural audio codec that achieves exceptional audio quality at low bitrates using a single codebook
@@ -32,7 +38,39 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 - **Inference Speed**: Real-time generation on mid-range devices
 - **Power Consumption**: Optimised for mobile and embedded devices
 
-## Get Started
+
+|  | NeuTTSAir | NeuTTSNano |
+|---|---:|---:|
+| **# Params (Active)** | ~360m | ~120m |
+| **# Params (Emb + Active)** | ~552m | ~229m |
+| **Cloning** | Yes | Yes |
+| **License** | Apache 2.0 | NeuTTS Open License 1.0 |
+
+## Throughput Benchmarking
+
+The two models were benchmarked using the Q4 quantisations [neutts-air-Q4-0](https://huggingface.co/neuphonic/neutts-air-q4-gguf) and [neutts-nano-Q4-0](https://huggingface.co/neuphonic/neutts-nano-q4-gguf).
+Benchmarks on CPU were run through llama-bench (llama.cpp) to measure prefill and decode throughput at multiple context sizes.
+
+For GPU's (specifically RTX 4090), we leverage vLLM to maximise throughput. We run benchmarks using the [vLLM benchmark](https://docs.vllm.ai/en/stable/cli/bench/throughput/).
+
+We include benchmarks on four devices: Galaxy A25 5G, AMD Ryzen 9HX 370, iMac M4 16GB, NVIDIA GeForce RTX 4090.
+
+
+|  | NeuTTSAir | NeuTTSNano |
+|---|---:|---:|
+| **Galaxy A25 5G (CPU only)** | 20 tokens/s | 45 tokens/s|
+| **AMD Ryzen 9 HX 370 (CPU only)** | 119 tokens/s | 221 tokens/s |
+| **iMAc M4 16 GB (CPU only)** | 111 tokens/s | 195 tokens/s |
+| **RTX 4090** | 16194 tokens/s | 19268 tokens/s |
+
+
+> [!NOTE]
+>  llama-bench used 14 threads for prefill and 16 threads for decode (as configured in the benchmark run) on AMD Ryzen 9HX 370 and iMac M4 16GB, and 6 threads for each on the Galaxy A25 5G. The tokens/s reported are when having 500 prefill tokens and generating 250 output tokens.
+
+> [!NOTE]
+> Please note that these benchmarks only include the Speech Language Model and do not include the Codec which is needed for a full audio generation pipeline.
+
+## Get Started with NeuTTS
 
 > [!NOTE]
 > We have added a [streaming example](examples/basic_streaming_example.py) using the `llama-cpp-python` library as well as a [finetuning script](examples/finetune.py). For finetuning, please refer to the [finetune guide](TRAINING.md) for more details.
@@ -40,8 +78,8 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 1. **Clone Git Repo**
 
    ```bash
-   git clone https://github.com/neuphonic/neutts-air.git
-   cd neutts-air
+   git clone https://github.com/neuphonic/neutts.git
+   cd neutts
    ```
 
 2. **Install `espeak` (required dependency)**
@@ -52,10 +90,10 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
 
    ```bash
    # Mac OS
-   brew install espeak
+   brew install espeak-ng
 
    # Ubuntu/Debian
-   sudo apt install espeak
+   sudo apt install espeak-ng
 
    # Windows install
    # via chocolatey (https://community.chocolatey.org/packages?page=1&prerelease=False&moderatorQueue=False&tags=espeak)
@@ -64,14 +102,6 @@ NeuTTS Air is built off Qwen 0.5B - a lightweight yet capable language model opt
    winget install -e --id eSpeak-NG.eSpeak-NG
    # via msi (need to add to path or folow the "Windows users who installed via msi" below)
    # find the msi at https://github.com/espeak-ng/espeak-ng/releases
-   ```
-
-   Mac users may need to put the following lines at the top of the neutts.py file.
-
-   ```python
-   from phonemizer.backend.espeak.wrapper import EspeakWrapper
-   _ESPEAK_LIBRARY = '/opt/homebrew/Cellar/espeak/1.48.04_1/lib/libespeak.1.1.48.dylib'  #use the Path to the library.
-   EspeakWrapper.set_library(_ESPEAK_LIBRARY)
    ```
 
    Windows users who installed via msi / do not have their install on path need to run the following (see https://github.com/bootphon/phonemizer/issues/163)
@@ -114,31 +144,31 @@ Run the basic example script to synthesize speech:
 
 ```bash
 python -m examples.basic_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_audio samples/dave.wav \
-  --ref_text samples/dave.txt
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_audio samples/jo.wav \
+  --ref_text samples/jo.txt
 ```
 
-To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air huggingface collection](https://huggingface.co/collections/neuphonic/neutts-air-68cc14b7033b4c56197ef350).
+To specify a particular model repo for the backbone or codec, add the `--backbone` argument. Available backbones are listed in [NeuTTS-Air](https://huggingface.co/collections/neuphonic/neutts-air) and [NeuTTS-Nano](https://huggingface.co/collections/neuphonic/neutts-nano) huggingface collections.
 
 Several examples are available, including a Jupyter notebook in the `examples` folder.
 
 ### One-Code Block Usage
 
 ```python
-from neuttsair.neutts import NeuTTSAir
+from neutts import NeuTTS
 import soundfile as sf
 
-tts = NeuTTSAir(
-   backbone_repo="neuphonic/neutts-air", # or 'neutts-air-q4-gguf' with llama-cpp-python installed
+tts = NeuTTS(
+   backbone_repo="neuphonic/neutts-nano", # or 'neutts-nano-q4-gguf' with llama-cpp-python installed
    backbone_device="cpu",
    codec_repo="neuphonic/neucodec",
    codec_device="cpu"
 )
-input_text = "My name is Dave, and um, I'm from London."
+input_text = "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all."
 
-ref_text = "samples/dave.txt"
-ref_audio_path = "samples/dave.wav"
+ref_text = "samples/jo.txt"
+ref_audio_path = "samples/jo.wav"
 
 ref_text = open(ref_text, "r").read().strip()
 ref_codes = tts.encode_reference(ref_audio_path)
@@ -149,25 +179,25 @@ sf.write("test.wav", wav, 24000)
 
 ### Streaming
 
-Speech can also be synthesised in _streaming mode_, where audio is generated in chunks and plays as generated. Note that this requires pyaudio to be installed. To do this, run: 
+Speech can also be synthesised in _streaming mode_, where audio is generated in chunks and plays as generated. Note that this requires pyaudio to be installed. To do this, run:
 
 ```bash
 python -m examples.basic_streaming_example \
-  --input_text "My name is Dave, and um, I'm from London" \
-  --ref_codes samples/dave.pt \
-  --ref_text samples/dave.txt
+  --input_text "My name is Andy. I'm 25 and I just moved to London. The underground is pretty confusing, but it gets me around in no time at all." \
+  --ref_codes samples/jo.pt \
+  --ref_text samples/jo.txt
 ```
 
 Again, a particular model repo can be specified with the `--backbone` argument - note that for streaming the model must be in GGUF format.
 
 ## Preparing References for Cloning
 
-NeuTTS Air requires two inputs:
+NeuTTS requires two inputs:
 
 1. A reference audio sample (`.wav` file)
 2. A text string
 
-The model then synthesises the text as speech in the style of the reference audio. This is what enables NeuTTS Air’s instant voice cloning capability.
+The model then synthesises the text as speech in the style of the reference audio. This is what enables NeuTTS models instant voice cloning capability.
 
 ### Example Reference Files
 
@@ -199,7 +229,7 @@ Take a look at this example [examples README](examples/README.md###minimal-laten
 
 ## Responsibility
 
-Every audio file generated by NeuTTS Air includes [Perth (Perceptual Threshold) Watermarker](https://github.com/resemble-ai/perth).
+Every audio file generated by NeuTTS includes [Perth (Perceptual Threshold) Watermarker](https://github.com/resemble-ai/perth).
 
 ## Disclaimer
 

@@ -9,6 +9,8 @@ def main(input_text, ref_codes_path, ref_text, backbone):
     assert backbone in [
         "neuphonic/neutts-air-q4-gguf",
         "neuphonic/neutts-air-q8-gguf",
+        "neuphonic/neutts-nano-q4-gguf",
+        "neuphonic/neutts-nano-q8-gguf",
     ], "Must be a GGUF ckpt as streaming is only currently supported by llama-cpp."
 
     # Initialize NeuTTS with the desired model and codec
@@ -51,13 +53,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ref_codes",
         type=str,
-        default="./samples/dave.pt",
+        default="./samples/jo.pt",
         help="Path to pre-encoded reference audio",
     )
     parser.add_argument(
         "--ref_text",
         type=str,
-        default="./samples/dave.txt",
+        default="./samples/jo.txt",
         help="Reference text corresponding to the reference audio",
     )
     parser.add_argument(
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--backbone",
         type=str,
-        default="neuphonic/neutts-air-q8-gguf",
+        default="neuphonic/neutts-nano-q8-gguf",
         help="Huggingface repo containing the backbone checkpoint. Must be GGUF.",
     )
     args = parser.parse_args()

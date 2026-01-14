@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="NeuTTSAir Reference Encoding Example")
     parser.add_argument(
-        "--ref_audio", type=str, default="./samples/dave.wav", help="Path to reference audio"
+        "--ref_audio", type=str, default="./samples/jo.wav", help="Path to reference audio"
     )
     parser.add_argument(
         "--output_path",

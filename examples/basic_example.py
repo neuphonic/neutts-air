@@ -40,12 +40,12 @@ if __name__ == "__main__":
         "--input_text", type=str, required=True, help="Input text to be converted to speech"
     )
     parser.add_argument(
-        "--ref_audio", type=str, default="./samples/dave.wav", help="Path to reference audio file"
+        "--ref_audio", type=str, default="./samples/jo.wav", help="Path to reference audio file"
     )
     parser.add_argument(
         "--ref_text",
         type=str,
-        default="./samples/dave.txt",
+        default="./samples/jo.txt",
         help="Reference text corresponding to the reference audio",
     )
     parser.add_argument(
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--backbone",
         type=str,
-        default="neuphonic/neutts-air",
+        default="neuphonic/neutts-nano",
         help="Huggingface repo containing the backbone checkpoint",
     )
     args = parser.parse_args()
