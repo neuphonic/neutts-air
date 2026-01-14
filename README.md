@@ -6,7 +6,7 @@ HuggingFace 🤗:
 
 tps://huggingface.co/neuphonic/neutts-nano-q8-gguf), [Q4 GGUF](https://huggingface.co/neuphonic/neutts-nano-q4-gguf)
 
-[NeuTTS-Nano Demo Video](https://github.com/user-attachments/assets/629ec5b2-4818-4fa6-987a-99fcbadc56bc))
+[NeuTTS-Nano Demo Video](https://github.com/user-attachments/assets/629ec5b2-4818-4fa6-987a-99fcbadc56bc)
 
 _Created by [Neuphonic](http://neuphonic.com/) - building faster, smaller, on-device voice AI_
 
